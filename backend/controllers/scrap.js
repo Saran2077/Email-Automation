@@ -1,0 +1,186 @@
+// src/controllers/scrap.js
+
+import { createAccount, createContact, createContactAssociation } from '../services/activeCampaign.js'; // Adjust the import path as necessary
+import fs from 'fs';
+
+const baseUrl = 'https://platform.tracxn.com/api/2.2/playground';
+
+const extractRequiredFields = (companyData) => {
+    /**
+     * Extract only the required fields from the Tracxn API response
+     */
+    // Extract business models
+    const businessModels = [];
+    for (const bm of (companyData.businessModelList || [])) {
+        const model = bm.fullPathString || bm.name || "";
+        if (model && !businessModels.includes(model)) {
+            businessModels.push(model);
+        }
+    }
+
+    // Get description - combine long and short if available
+    const descriptionData = companyData.description || {};
+    const description = descriptionData.long || descriptionData.short || "";
+
+    // Extract domain info
+    const domain = companyData.domain || "";
+
+    // Extract LinkedIn URL
+    const profileLinks = companyData.profileLinks || {};
+    const linkedinUrl = profileLinks.linkedIn || "";
+
+    const primaryIndustry = [];
+    for (const industry of (companyData.sectorList[0] || [])) {
+        primaryIndustry.push(industry.name || "");
+    }
+
+    // Get annual revenue if available
+    let annualRevenue = "Not Available";
+    if (companyData.annualRevenue) {
+        const revenueData = companyData.annualRevenue;
+        const amount = revenueData.amount || 0;
+        const unit = revenueData.unit ? revenueData.unit.toUpperCase() : "";
+        if (unit === "M") {
+            annualRevenue = `$${amount.toFixed(2)}M`;
+        } else if (unit === "B") {
+            annualRevenue = `$${amount.toFixed(2)}B`;
+        } else {
+            annualRevenue = `$${amount.toFixed(2)}`;
+        }
+    }
+
+    return {
+        Name: companyData.name || "",
+        Description: description,
+        Primary_Industry: primaryIndustry.join('>'),
+        Business_Models: businessModels.join('>'),
+        Domain: domain,
+        LinkedIn_URL: linkedinUrl,
+        Annual_Revenue: annualRevenue
+    };
+}
+
+const fetchAllCompanies = async (outputFile = "company_data.csv", batchSize = 100) => {
+    /**
+     * Fetch and process all companies with pagination
+     */
+    let page = 1;
+    const allCompanyData = [];
+    console.log('allCompanyData')
+
+    const companiesList = await fetchCompaniesList(page, batchSize);
+    console.log('companiesList', companiesList)
+    for (const company of companiesList.result) {
+        const processedData = extractRequiredFields(company);
+        const resp = await createAccount({
+            account: {
+                owner: 1,
+                name: processedData.Name,
+                accountUrl: processedData.Domain,
+                fields: [
+                    { customFieldId: "1", fieldValue: processedData.Description },
+                    { customFieldId: "14", fieldValue: processedData.LinkedIn_URL },
+                    { customFieldId: "15", fieldValue: processedData.Business_Models },
+                    { customFieldId: "16", fieldValue: processedData.Primary_Industry }
+                ]
+            }
+        });
+
+        const companyId = resp.account?.id || "";
+        const employeeList = company.employeeInfo?.employeeList || [];
+        console.log("Company employees", employeeList);
+
+        for (const employee of employeeList) {
+            const primaryEmail = `user${Math.floor(Math.random() * 10000)}@gmail.com` || employee.emailInfo?.primaryEmail || '';
+            console.log('Employee Info', {
+                email: primaryEmail,
+                firstName: employee.name?.replace(" ", "") || '',
+                lastName: "",
+                fieldValues: [
+                    { field: "1", value: employee.profileLinks?.linkedinHandle || '' }
+                ]
+            });
+            if (primaryEmail) {
+                const contact = await createContact({
+                    email: primaryEmail,
+                    firstName: employee.name || '',
+                    lastName: "",
+                    fieldValues: [
+                        { field: "2", value: employee.profileLinks?.linkedinHandle || '' }
+                    ]
+                });
+
+                if (contact) {
+                    const contactId = contact.contact?.id || '';
+                    console.log('Contact ID', contactId);
+
+                    const association = await createContactAssociation({
+                        accountContact: {
+                            contact: contactId,
+                            account: companyId,
+                            jobTitle: employee.designation || ""
+                        }
+                    });
+
+                    console.log("Association", association);
+                }
+            }
+        }
+
+        allCompanyData.push(processedData);
+
+        // Save intermediate results periodically
+        if (allCompanyData.length % 100 === 0) {
+            // this.saveToCsv(allCompanyData, outputFile);
+        }
+    }
+
+    // Save final results
+    if (allCompanyData.length > 0) {
+        // this.saveToCsv(allCompanyData, outputFile);
+        console.log(`Completed! Total companies processed: ${allCompanyData.length}`);
+    } else {
+        console.log("No data was processed");
+    }
+}
+
+const fetchCompaniesList = async(page = 1, pageSize = 100) => {
+    /**
+     * Fetch list of companies with pagination
+     */
+    try {
+        const headers = {
+            "accesstoken": `${process.env.TRACXN_API_KEY}`,
+            'cache-control': 'no-cache',
+            "Content-Type": "application/json"
+        }
+        const endpoint = `${baseUrl}/companies`;
+        const params = {
+            filter: {
+                city: ["Chennai"]
+            }
+        };
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(params)
+        });
+
+        console.log('fetched list of companies with pagination', response)
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error(`Error fetching companies list on page ${page}: ${error.message}`);
+        return null;
+    }
+}
+
+
+
+
+export { fetchAllCompanies };

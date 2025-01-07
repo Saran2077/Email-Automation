@@ -101,4 +101,12 @@ async function handleSendMail(request, response) {
   }
 }
 
-export { handleSendMail }
+async function handleAddContact(req, res) {
+    try {
+        
+    } catch (error) {
+        console.log(`Error in handleAddContact: {error}`);
+    }
+}
+
+export { handleSendMail, handleAddContact }
