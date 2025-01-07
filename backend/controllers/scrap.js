@@ -102,13 +102,14 @@ const fetchAllCompanies = async (outputFile = "company_data.csv", batchSize = 10
             });
             if (primaryEmail) {
                 const contact = await createContact({
+                    contact: {
                     email: primaryEmail,
                     firstName: employee.name || '',
-                    lastName: "",
+                    lastName: "M",
                     fieldValues: [
                         { field: "2", value: employee.profileLinks?.linkedinHandle || '' }
                     ]
-                });
+                }});
 
                 if (contact) {
                     const contactId = contact.contact?.id || '';
