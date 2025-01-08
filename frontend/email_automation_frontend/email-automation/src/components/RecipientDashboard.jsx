@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react'
-import { recipientAPI } from '../utils/apiLayer'
+import { recipientAPI, dashboardAPI } from '../utils/apiLayer'
+import EmailStatsDashboard from './EmailStatsDashboard'
 
 function RecipientDashboard() {
   const [recipients, setRecipients] = useState([])
   const [loading, setLoading] = useState(true)
+  const [dashboardMetricsLoading, setDashboardMetricsLoading] = useState(true)
+  const [dashboardMetrics, setDashboardMetrics] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchRecipients()
+    fetchDashboardMetrics()
   }, [])
 
   const fetchRecipients = async () => {
@@ -25,6 +29,21 @@ function RecipientDashboard() {
     }
   }
 
+  const fetchDashboardMetrics = async () => {
+    try {
+      setDashboardMetricsLoading(true)
+      const response = await dashboardAPI.metrics()
+      setDashboardMetrics(response.data || [])
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching recipients:', err)
+      setError('Failed to load recipients')
+      setRecipients([])
+    } finally {
+      setDashboardMetricsLoading(false)
+    }
+  }
+
   if (loading) {
     return <div className="p-6">Loading...</div>
   }
@@ -35,7 +54,8 @@ function RecipientDashboard() {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Recipients</h2>
+      {!dashboardMetricsLoading && <EmailStatsDashboard stats={dashboardMetrics} />}
+      <h2 className="text-2xl font-semibold mt-4 mb-4">Recipients</h2>
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full">
           <thead className="bg-gray-50">

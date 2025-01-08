@@ -58,4 +58,16 @@ export const scrapAPI = {
       throw error.response?.data || error.message;
     }
   }
+}
+;
+export const dashboardAPI = {
+  metrics: async () => {
+    try {
+      const response = await api.get('/v1/dashboard');
+      console.log(response.data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  }
 };

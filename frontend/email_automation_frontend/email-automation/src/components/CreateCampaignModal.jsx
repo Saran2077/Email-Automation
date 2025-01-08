@@ -3,7 +3,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-function CreateCampaignModal({ onClose, selectedCustomers }) {
+function CreateCampaignModal({ onClose, onSubmit, selectedCustomers }) {
   const navigate = useNavigate()
   const [campaignData, setCampaignData] = useState({
     name: '',
