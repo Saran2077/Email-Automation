@@ -34,6 +34,10 @@ const emailSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isSent: {
+    type: Boolean,
+    default: false
+  },
   isDraft: {
     type: Boolean,
     default: true

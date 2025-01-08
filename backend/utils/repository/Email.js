@@ -51,11 +51,14 @@ class EmailRepository {
       const email = await Email.findOneAndUpdate(
         { emailId },
         { $set: updateData },
-        { new: true, runValidators: true }
-      )
-        .populate('from')
-        .populate('to')
-        .populate('campaign');
+        { 
+          new: true,
+          runValidators: true,
+          populate: [
+            { path: 'to' }
+          ]
+        }
+      );
 
       if (!email) {
         throw new Error('Email not found');

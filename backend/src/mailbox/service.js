@@ -62,8 +62,110 @@ class MailboxService {
         }
     }
 
-    async sendEmail(email, recipient) {
+    async updateDraftEmail(emailId, subject, body, to, from){
+        try {
+            let emailToSend;
 
+            let toRecipient = await Recipient.findOne({ email: to });
+            if (!toRecipient) {
+                toRecipient = await Recipient.create({ 
+                    email: to,
+                    name: to.split('@')[0] // Basic name from email
+                });
+            }
+
+            if (emailId) {
+                // Update existing draft email
+                emailToSend = await emailRepository.update(
+                    emailId,
+                    {
+                        subject,
+                        body,
+                        to: toRecipient._id,
+                        from,
+                        isDraft: true,
+                        isSent: false,
+                        status: 'draft'
+                    }
+                );
+            } 
+            else {
+                throw new Error("Requested Email is not found")
+            }
+
+            console.log("sentEmailStored==>", emailToSend)
+
+            return emailToSend;
+        } catch (error) {
+            console.error('Service Error:', error);
+            throw error;
+        }
+    }
+
+    async sendEmail(emailId, subject, body, to, from) {
+        try {
+            let emailToSend;
+
+            let toRecipient = await Recipient.findOne({ email: to });
+            if (!toRecipient) {
+                toRecipient = await Recipient.create({ 
+                    email: to,
+                    name: to.split('@')[0] // Basic name from email
+                });
+            }
+
+            if (emailId) {
+                // Update existing draft email
+                emailToSend = await emailRepository.update(
+                    emailId,
+                    {
+                        subject,
+                        body,
+                        to: toRecipient._id,
+                        from,
+                        isDraft: false,
+                        isSent: true,
+                        status: 'sent'
+                    }
+                );
+            } else {
+                // Create new email
+                emailToSend = await emailRepository.create({
+                    subject,
+                    body,
+                    to: toRecipient._id,
+                    from,
+                    isDraft: false,
+                    isSent: true,
+                    status: 'sent'
+                });
+            }
+
+            console.log("sentEmailStored==>", emailToSend)
+
+            return emailToSend;
+        } catch (error) {
+            console.error('Service Error:', error);
+            throw error;
+        }
+    }
+
+    async listSentEmail(){
+        try {
+            // Use the repository's getRecipientEmails method with 'sent' type
+            const sentEmails = await emailRepository.list(
+                { isSent: true, status: 'sent' }
+            );
+            return {
+                success: true,
+                data: {
+                    sent: sentEmails.emails,
+                    totalItems: sentEmails.total
+                }
+            };
+        } catch(error) {
+            throw error;
+        }
     }
 
     async starEmail(email, recipient) {

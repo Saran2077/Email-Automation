@@ -61,6 +61,7 @@ export const scrapAPI = {
 };
 
 export const mailboxAPI = {
+  
     listDrafts: async () => {
         try {
             const response = await fetch('http://localhost:3000/api/v1/mailbox/list_draft_email', {
@@ -77,6 +78,61 @@ export const mailboxAPI = {
             return await response.json();
         } catch (error) {
             console.error('Error fetching draft emails:', error);
+            throw error;
+        }
+    },
+
+    listSentEmails: async () => {
+        try {
+            const response = await fetch('http://localhost:3000/api/v1/mailbox/list_sent_email');
+            if (!response.ok) {
+                throw new Error('Failed to fetch sent emails');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching sent emails:', error);
+            throw error;
+        }
+    },
+
+    updateDraft: async (draftData) => {
+        try {
+            const response = await fetch('http://localhost:3000/api/v1/mailbox/update_draft_email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(draftData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update draft');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error updating draft:', error);
+            throw error;
+        }
+    },
+
+    sendEmail: async (emailData) => {
+        try {
+            const response = await fetch('http://localhost:3000/api/v1/mailbox/send_email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(emailData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to send email');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error sending email:', error);
             throw error;
         }
     }

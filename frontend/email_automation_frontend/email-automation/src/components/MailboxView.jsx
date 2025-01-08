@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { mailboxAPI } from '../utils/apiLayer'
+import { toast } from 'react-toastify'
 
 function MailboxView() {
   const [selectedEmail, setSelectedEmail] = useState(null)
@@ -28,11 +29,40 @@ function MailboxView() {
   const [error, setError] = useState(null)
   const [minimizedEmails, setMinimizedEmails] = useState([])
   const [isMinimized, setIsMinimized] = useState(false)
+  const [editedEmail, setEditedEmail] = useState(null)
 
   // Fetch all emails on initial load
   useEffect(() => {
-    fetchDraftEmails();
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        // Fetch both draft and sent emails in parallel
+        await Promise.all([
+          fetchDraftEmails(),
+          fetchSentEmails()
+        ]);
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+        setError('Failed to fetch emails');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
   }, []); // Empty dependency array means this runs once on mount
+
+  // Initialize edited email when a draft is selected
+  useEffect(() => {
+    if (selectedEmail && activeFolder === 'drafts') {
+      setEditedEmail({
+        id: selectedEmail.id,
+        subject: selectedEmail.subject,
+        to: selectedEmail.to,
+        body: selectedEmail.preview
+      });
+    }
+  }, [selectedEmail]);
 
   const fetchDraftEmails = async () => {
     try {
@@ -55,8 +85,45 @@ function MailboxView() {
         ...prev,
         drafts: draftEmails
       }));
+
+      toast.success('Draft saved successfully!');
+
     } catch (err) {
       setError('Failed to fetch draft emails');
+      toast.error('Failed to fetch draft emails');
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSentEmails = async () => {
+    try {
+      setLoading(true);
+      const response = await mailboxAPI.listSentEmails();
+      
+      // Fix the response mapping to account for nested data structure
+      const sentEmails = response.data.data.sent.map(sent => ({
+        id: sent.emailId,
+        subject: sent.subject,
+        preview: sent.body,
+        to: sent.to.email,
+        from: sent.from,
+        date: new Date(sent.createdAt).toLocaleDateString(),
+        isSent: true,
+        starred: sent.isStarred
+      }));
+
+      setEmails(prev => ({
+        ...prev,
+        sent: sentEmails
+      }));
+
+      toast.success('Email sent successfully!');
+
+    } catch (err) {
+      setError('Failed to fetch sent emails');
+      toast.error('Failed to fetch sent emails');
       console.error('Error:', err);
     } finally {
       setLoading(false);
@@ -89,6 +156,88 @@ function MailboxView() {
     setSelectedEmail(email)
     setIsMinimized(false)
   }
+
+  const handleInputChange = (field, value) => {
+    setEditedEmail(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+        setLoading(true);
+        
+        const draftData = {
+            emailId: editedEmail.id, 
+            subject: editedEmail.subject,
+            body: editedEmail.body,
+            to: editedEmail.to,
+            // from: "betagamer580@gmail.com" // You might want to get this from user context/state
+        };
+
+        const response = await mailboxAPI.updateDraft(draftData);
+        
+        // Update local state with the response data
+        setEmails(prev => ({
+            ...prev,
+            drafts: prev.drafts.map(email => 
+                email.id === editedEmail.id 
+                    ? {
+                        id: response.data.emailId,
+                        subject: response.data.subject,
+                        preview: response.data.body,
+                        to: response.data.to.email,
+                        from: response.data.from,
+                        date: new Date(response.data.updatedAt).toLocaleDateString(),
+                        isDraft: true,
+                        starred: response.data.isStarred
+                    }
+                    : email
+            )
+        }));
+
+        toast.success('Draft saved successfully!');
+
+    } catch (error) {
+        console.error('Error saving draft:', error);
+        toast.error('Failed to save draft. Please try again.');
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const handleSendDraft = async (email) => {
+    try {
+        setLoading(true);
+        
+        const emailData = {
+            emailId: email.id,
+            subject: email.subject,
+            body: email.body,
+            to: email.to,
+            from: "betagamer580@gmail.com" // You might want to get this from user context/state
+        };
+
+        const response = await mailboxAPI.sendEmail(emailData);
+        
+        if (response.success) {
+            toast.success(response.message || 'Email sent successfully!');
+            setSelectedEmail(null);
+            
+            // Refresh the sent emails list
+            await fetchSentEmails();
+        } else {
+            throw new Error('Failed to send email');
+        }
+        
+    } catch (error) {
+        console.error('Failed to send email:', error);
+        toast.error('Failed to send email. Please try again.');
+    } finally {
+        setLoading(false);
+    }
+  };
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -132,11 +281,11 @@ function MailboxView() {
             placeholder="Search emails..."
             className="w-full px-3 py-1.5 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white mr-4"
           />
-          {activeFolder === 'drafts' && (
+          {(activeFolder === 'drafts' || activeFolder === 'sent') && (
             <button 
-              onClick={fetchDraftEmails}
+              onClick={activeFolder === 'drafts' ? fetchDraftEmails : fetchSentEmails}
               className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-              title="Refresh drafts"
+              title={`Refresh ${activeFolder}`}
             >
               <ArrowPathIcon className="h-5 w-5" />
             </button>
@@ -189,8 +338,8 @@ function MailboxView() {
         )}
       </div>
 
-      {/* Gmail-style Draft Email Modal */}
-      {selectedEmail && activeFolder === 'drafts' && (
+      {/* Updated Draft Email Modal */}
+      {selectedEmail && activeFolder === 'drafts' && editedEmail && (
         <Draggable handle=".modal-handle" bounds="body">
           <div className="fixed bottom-0 right-24 w-[600px] bg-white rounded-t-lg shadow-xl z-50 flex flex-col">
             {/* Modal Header */}
@@ -203,12 +352,6 @@ function MailboxView() {
                   onClick={() => handleMinimize(selectedEmail)}
                 >
                   <MinusIcon className="h-4 w-4 text-gray-600" />
-                </button>
-                <button 
-                  className="p-1.5 hover:bg-gray-200 rounded-full"
-                  title="Full Screen"
-                >
-                  <ArrowsPointingOutIcon className="h-4 w-4 text-gray-600" />
                 </button>
                 <button 
                   onClick={() => setSelectedEmail(null)}
@@ -226,48 +369,52 @@ function MailboxView() {
               <div className="flex items-center border-b py-2">
                 <span className="text-sm text-gray-600 w-12">To</span>
                 <input 
-                  type="text" 
-                  value={selectedEmail.to}
+                  type="email" 
+                  value={editedEmail.to}
+                  onChange={(e) => handleInputChange('to', e.target.value)}
                   className="flex-1 outline-none text-sm"
-                  readOnly
+                  placeholder="recipient@example.com"
                 />
-                <button className="text-gray-400 hover:text-gray-600">
-                  Cc
-                </button>
               </div>
 
               {/* Subject */}
               <div className="flex items-center border-b py-2">
                 <input 
                   type="text"
-                  value={selectedEmail.subject}
+                  value={editedEmail.subject}
+                  onChange={(e) => handleInputChange('subject', e.target.value)}
                   placeholder="Subject"
                   className="flex-1 outline-none text-sm"
-                  readOnly
                 />
               </div>
 
               {/* Body */}
               <div className="mt-4 h-[300px]">
                 <textarea 
-                  className="w-full h-full outline-none text-sm resize-none"
-                  value={selectedEmail.preview}
-                  readOnly
+                  className="w-full h-full outline-none text-sm resize-none p-2"
+                  value={editedEmail.body}
+                  onChange={(e) => handleInputChange('body', e.target.value)}
+                  placeholder="Write your email..."
                 />
               </div>
             </div>
 
             {/* Footer */}
             <div className="px-4 py-3 border-t flex items-center justify-between">
-              <div>
+              <div className="flex space-x-2">
                 <button 
-                  className="bg-blue-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-                  onClick={() => {
-                    // TODO: Implement send functionality
-                    console.log('Sending draft:', selectedEmail.id);
-                  }}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                  onClick={() => handleSendDraft(editedEmail)}
+                  disabled={loading}
                 >
-                  Send
+                  {loading ? 'Sending...' : 'Send'}
+                </button>
+                <button 
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
+                  onClick={handleSaveDraft}
+                  disabled={loading}
+                >
+                  Save Draft
                 </button>
               </div>
               
