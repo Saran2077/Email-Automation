@@ -1,6 +1,6 @@
 import express from 'express';
-import activeCampaignRoutes from "./routes/activeCampaign.js";
-import mailgunRoutes from "./routes/mailgun.js";
+import activeCampaignRoutes from "./src/routes/activeCampaign.js";
+import mailgunRoutes from "./src/routes/mailgun.js";
 import dotenv from 'dotenv';
 import { connectToMongoDB } from './db/dbConnect.js';
 

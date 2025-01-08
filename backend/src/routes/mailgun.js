@@ -1,5 +1,5 @@
 import express from "express";
-import { email_clicked, email_opened } from "../controllers/mailgun.js";
+import { email_clicked, email_opened } from "../../controllers/mailgun.js";
 
 const router = express.Router();
 
