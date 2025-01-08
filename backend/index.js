@@ -5,6 +5,7 @@ import mailgunRoutes from "./src/routes/mailgun.js";
 import scrapRoutes from "./src/routes/scrap.js";
 import dotenv from 'dotenv';
 import { connectToMongoDB } from './db/dbConnect.js';
+import recipientRoutes from "./src/recipients/route.js";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use(cors());
 app.use('/api/activeCampaign', activeCampaignRoutes)
 app.use('/api/mailgun', mailgunRoutes)
 app.use('/api/scrap', scrapRoutes)
+app.use('/api/v1/recipients', recipientRoutes)
 
 
 app.listen(port, () => {

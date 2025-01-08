@@ -11,6 +11,7 @@ class RecipientRepository {
     }
   }
 
+  
   // Get a recipient by ID
   async getById(recipientId) {
     try {
@@ -143,6 +144,15 @@ class RecipientRepository {
       return await this.list(query, page, limit);
     } catch (error) {
       throw new Error(`Error searching recipients: ${error.message}`);
+    }
+  }
+
+  // Bulk create recipients
+  async bulkCreate(recipientsData) {
+    try {
+      return await Recipient.bulkCreateRecipients(recipientsData);
+    } catch (error) {
+      throw new Error(`Error in bulk creating recipients: ${error.message}`);
     }
   }
 }
