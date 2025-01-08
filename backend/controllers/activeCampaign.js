@@ -2,6 +2,10 @@ import { emailData } from "../index.js";
 import { getContactData, getOrganizationData, getCustomFieldData, getAllLists, createAccount, bulkImportContacts } from "../src/services/activeCampaign.js"
 import { generateEmailsFromJsonList } from "../src/services/email_generation.js";
 import { sendMail } from "../utils/sendMail.js";
+import MailboxService from "../src/mailbox/service.js";
+
+
+const mailboxService = new MailboxService()
 
 async function handleSendMail(request, response) {
   try {
@@ -87,12 +91,30 @@ async function handleSendMail(request, response) {
         console.log("Mail", typeof aiGenMail, aiGenMail);
 
         for (const aMail of aiGenMail) {
-          const id = await sendMail(aMail);
-          emailData.push({
-            id: id,
-            data: aMail,
-            contact_id: contactId,
-          });
+
+          // const id = await sendMail(aMail);
+          // emailData.push({
+          //   id: id,
+          //   data: aMail,
+          //   contact_id: contactId,
+          // });
+          
+          const emailData = JSON.parse(aMail.generated_email);
+
+          const subject = emailData.subject || emailData.Subject || '';
+          const body = emailData.body || emailData.Body || '';
+          const from = "betagamer580@gmail.com"
+          const to = "saranmuthuraj2004@gmail.com"
+
+          // const payload = {
+          //   subject: subject,
+          //   body: body,
+          //   from: from,
+          //   to: to
+          // }
+          
+          mailboxService.draftEmail(subject, body, to, from)
+
         }
       }
     }

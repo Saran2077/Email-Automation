@@ -16,7 +16,7 @@ const emailSchema = new mongoose.Schema({
     required: true
   },
   from: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     ref: 'Recipient',
     required: true
   },
@@ -36,7 +36,7 @@ const emailSchema = new mongoose.Schema({
   },
   isDraft: {
     type: Boolean,
-    default: false
+    default: true
   }
 }, {
   timestamps: true

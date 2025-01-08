@@ -4,8 +4,7 @@ class EmailRepository {
   // Create a new email
   async create(emailData) {
     try {
-      const email = new Email(emailData);
-      return await email.save();
+      return await Email.create(emailData)
     } catch (error) {
       throw new Error(`Error creating email: ${error.message}`);
     }
@@ -24,16 +23,13 @@ class EmailRepository {
   }
 
   // Get all emails with optional filters
-  async list(filters = {}, page = 1, limit = 10) {
+  async list(filters = {}) {
     try {
-      const skip = (page - 1) * limit;
+    
       const query = Email.find(filters)
-        .populate('from')
         .populate('to')
-        .populate('campaign')
         .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit);
+      
 
       const [emails, total] = await Promise.all([
         query.exec(),
@@ -42,9 +38,7 @@ class EmailRepository {
 
       return {
         emails,
-        total,
-        page,
-        totalPages: Math.ceil(total / limit)
+        total
       };
     } catch (error) {
       throw new Error(`Error listing emails: ${error.message}`);
@@ -150,4 +144,4 @@ class EmailRepository {
   }
 }
 
-export default new EmailRepository();
+export default EmailRepository
