@@ -3,22 +3,66 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import CreateCampaignModal from './CreateCampaignModal'
 import { scrapAPI, recipientAPI } from '../utils/apiLayer'
+import FilterModel from './FilterModel'
+import { Pagination } from 'antd'
 
 function CustomerScraper() {
   const [customers, setCustomers] = useState([])
   const [selectedCustomers, setSelectedCustomers] = useState([])
   const [loading, setLoading] = useState(false)
   const [showCampaignModal, setShowCampaignModal] = useState(false)
+  const [showFilterModal, setShowFilterModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate()
 
+  const [filters, setFilters] = useState({
+    country: [],
+    state: [],
+    city: [],
+    foundedYear: [],
+    practiceArea: []
+  });
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      setLoading(true)
+      try {
+        const response = await scrapAPI.fetchCustomers({ filter: filters, from: currentPage * 20})
+        if (!response?.data) {
+          throw new Error('No data received from scraping')
+        }
+        setCustomers(response.data)
+      } catch (error) {
+        console.error('Error in useEffect:', error)
+        toast.error(error.message || 'Failed to fetch customer data')
+        setCustomers([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCustomers();
+  }, [currentPage])
+
+// const handleApplyFilters = (newFilters) => {
+//   console.log("NEW FILTERS", newFilters)
+//   setFilters(newFilters);
+//   setShowFilterModal(false);
+// };
+
   const handleScrapeData = async () => {
+    setShowFilterModal(true)
+  }
+
+  const handleApplyFilters = async (selectedFilters) => {
+    setFilters(selectedFilters)
     setLoading(true)
     try {
-      const response = await scrapAPI.fetchCustomers()
+      const response = await scrapAPI.fetchCustomers({filter: selectedFilters})
       if (!response?.data) {
         throw new Error('No data received from scraping')
       }
       setCustomers(response.data)
+      setShowFilterModal(false)
     } catch (error) {
       console.error('Error in handleScrapeData:', error)
       toast.error(error.message || 'Failed to fetch customer data')
@@ -35,10 +79,6 @@ function CustomerScraper() {
         : [...prev, customer]
     )
   }
-
-  useEffect(() => {
-    console.log('selectedCustomers', selectedCustomers)
-  }, [selectedCustomers])
 
   const handleSelectAll = () => {
     setSelectedCustomers(
@@ -139,6 +179,14 @@ function CustomerScraper() {
         </div>
       </div>
 
+      {showFilterModal && (
+        <FilterModel
+          onApply={handleApplyFilters}
+          onClose={() => setShowFilterModal(false)}
+          initialFilters={filters}
+        />
+      )}
+
       {customers.length > 0 && (
         <div className="bg-white rounded-lg shadow">
           <div className="p-4 border-b">
@@ -198,6 +246,16 @@ function CustomerScraper() {
               ))}
             </tbody>
           </table>
+          </div>
+
+          <div className="flex justify-center p-4">
+            <Pagination
+              current={currentPage}
+              onChange={setCurrentPage}
+              total={10000}
+              pageSize={20}
+              showSizeChanger={false}
+            />
           </div>
         </div>
       )}

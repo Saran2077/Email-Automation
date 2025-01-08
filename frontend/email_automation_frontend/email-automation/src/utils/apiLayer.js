@@ -50,9 +50,9 @@ export const recipientAPI = {
 };
 
 export const scrapAPI = {
-  fetchCustomers: async () => {
+  fetchCustomers: async (filters) => {
     try {
-      const response = await api.get('/scrap');
+      const response = await api.post('/scrap', filters);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
