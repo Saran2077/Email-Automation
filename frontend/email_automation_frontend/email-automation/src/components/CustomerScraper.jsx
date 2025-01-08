@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import AddToRecipientsModal from './AddToRecipientsModal'
+import CreateCampaignModal from './CreateCampaignModal'
 import { scrapAPI, recipientAPI } from '../utils/apiLayer'
 
 function CustomerScraper() {
@@ -28,19 +28,23 @@ function CustomerScraper() {
     }
   }
 
-  const handleSelectCustomer = (customerId) => {
+  const handleSelectCustomer = (customer) => {
     setSelectedCustomers(prev => 
-      prev.includes(customerId)
-        ? prev.filter(id => id !== customerId)
-        : [...prev, customerId]
+      prev.findIndex((company) => company?.id === customer?.id) !== -1
+        ? prev.filter(id => id?.id !== customer?.id)
+        : [...prev, customer]
     )
   }
+
+  useEffect(() => {
+    console.log('selectedCustomers', selectedCustomers)
+  }, [selectedCustomers])
 
   const handleSelectAll = () => {
     setSelectedCustomers(
       selectedCustomers.length === customers.length
         ? []
-        : customers.map(customer => customer.id)
+        : customers.flatMap(customer => customer?.Employee_List?.map(employee => ({...employee, ...customer, Employee_List: undefined})))
     )
   }
 
@@ -166,12 +170,16 @@ function CustomerScraper() {
             <tbody className="bg-white divide-y divide-gray-200">
               {customers.map(company => (
                 company?.Employee_List?.map((employee) => (
-                  <tr key={company.id}>
+                  <tr key={employee.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
                         type="checkbox"
-                        checked={selectedCustomers.includes(company.id)}
-                        onChange={() => handleSelectCustomer(company.id)}
+                        checked={selectedCustomers.findIndex((select) => select.id === employee.id) !== -1}
+                        onChange={() => handleSelectCustomer({
+                          ...company,
+                          Employee_List: undefined,
+                          ...employee
+                        })}
                         className="rounded border-gray-300"
                       />
                     </td>
@@ -194,10 +202,10 @@ function CustomerScraper() {
       )}
 
       {showCampaignModal && (
-        <AddToRecipientsModal
+        <CreateCampaignModal
           onClose={() => setShowCampaignModal(false)}
-          selectedCustomersCount={selectedCustomers.length}
-          onSubmit={handleAddToRecipientsSubmit}
+          selectedCustomers={selectedCustomers}
+          // onSubmit={handleAddToRecipientsSubmit}
           loading={loading}
         />
       )}

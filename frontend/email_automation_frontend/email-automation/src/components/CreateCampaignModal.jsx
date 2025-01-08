@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
 
-function CreateCampaignModal({ onClose, selectedCustomersCount }) {
+function CreateCampaignModal({ onClose, selectedCustomers }) {
   const navigate = useNavigate()
   const [campaignData, setCampaignData] = useState({
     name: '',
     description: '',
   })
   const [dropdownList, setDropdownList] = useState([])
-  const [selectedList, setSelectedList] = useState([])
+  const [selectedList, setSelectedList] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     // Fetch recipients from API
@@ -21,13 +22,59 @@ function CreateCampaignModal({ onClose, selectedCustomersCount }) {
     fetchRecipients()
   }, [])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault()
-    const newCampaignId = Date.now() 
+    setIsLoading(true)
+    console.log(selectedCustomers, "asdasd")
+    const newCampaignId = Object.values(selectedCustomers.reduce((acc, customer) => {
+      // Create a unique key for each company based on the company name
+      const key = customer.Name;
+
+      // If the company doesn't exist in the accumulator, create a new entry
+      if (!acc[key]) {
+        acc[key] = {
+          Name: customer.Name,
+          Description: customer.Description,
+          Primary_Industry: customer.Primary_Industry,
+          Business_Models: customer.Business_Models,
+          Domain: customer.Domain,
+          LinkedIn_URL: customer.LinkedIn_URL,
+          Annual_Revenue: customer.Annual_Revenue,
+          Employee_List: [] // Initialize Employee_List as an empty array
+        };
+      }
+
+      // Push the employee details into the Employee_List
+      acc[key].Employee_List.push({
+        designation: customer.designation,
+        id: customer.id,
+        name: customer.name,
+        profileLinks: customer.profileLinks,
+        shortBio: customer.shortBio,
+        isKeyPeople: customer.isKeyPeople,
+        isFoundingMember: customer.isFoundingMember,
+        tracxnId: customer.tracxnId
+      });
+
+      return acc;
+    }, {}))
+    console.log(newCampaignId)
+    const response = await fetch('http://localhost:3000/api/activeCampaign/contact/bulk-upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        list_id: selectedList,
+        data: newCampaignId
+      }),
+    })
+
     
     // Store campaign data or make API call here
     console.log('Campaign Data:', campaignData)
     
+    setIsLoading(false)
     // Close modal and redirect to campaign view
     onClose()
     navigate(`/campaigns/${newCampaignId}`)
@@ -65,7 +112,7 @@ function CreateCampaignModal({ onClose, selectedCustomersCount }) {
 
             <div className="bg-gray-50 p-3 rounded-md">
               <p className="text-sm text-gray-600">
-                Selected: {selectedCustomersCount} contacts
+                Selected: {selectedCustomers?.length} contacts
               </p>
             </div>
           </div>
@@ -81,8 +128,9 @@ function CreateCampaignModal({ onClose, selectedCustomersCount }) {
             <button
               type="submit"
               className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+              disabled={selectedList === null || isLoading}
             >
-              Upload
+              {isLoading ? 'Uploading...' : 'Upload'}
             </button>
           </div>
         </form>

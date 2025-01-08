@@ -162,4 +162,28 @@ async function createContactAssociation(contactData) {
     }
 }
 
-export { getContactData, getOrganizationData, getCustomFieldData, createAccount, createContact, createContactAssociation, getAllLists };
+async function bulkImportContacts(contactData) {
+    const url = `${process.env.ACTIVE_CAMPAIGN_URL}/import/bulk_import`;
+
+    try {
+        const headers = {
+            'Api-Token': process.env.ACTIVE_CAMPAIGN_API_KEY,
+            'Content-Type': 'application/json'
+        };
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(contactData)
+        });
+        if (!response.ok) {
+            const errorResponse = await response.json(); // Log the error response
+            throw new Error(`Error bulk uploading contacts: ${response.statusText} , Details: ${JSON.stringify(errorResponse)}`);
+        }
+        return await response.json();
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ message: `Error bulk uploading contacts: ${e.message}`});
+    }
+}
+
+export { getContactData, getOrganizationData, getCustomFieldData, createAccount, createContact, createContactAssociation, getAllLists, bulkImportContacts };
