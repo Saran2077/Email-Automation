@@ -20,6 +20,31 @@ const recipientSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  country: {
+    type: String,
+    
+  },
+  city: {
+    type: String,
+    
+  },
+  state: {
+    type: String,
+    
+  },
+  designation: {
+    type: String,
+    
+  },
+  linkedinHandle: {
+    type: String,
+    
+  },
+  companyDomain: {
+    type: String,
+    
+  },
+  
   stage: {
     type: String,
     enum: ['contact', 'lead', 'deal', 'account'],
@@ -66,5 +91,45 @@ recipientSchema.pre('save', async function(next) {
   }
   next();
 });
+
+// Add static method for bulk creation
+recipientSchema.statics.bulkCreateRecipients = async function(recipientsData) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const recipients = [];
+    
+    // Get the current counter value
+    let counter = await Counter.findById('recipientId').session(session) || { seq: 0 };
+    
+    // Prepare all recipients with incremented IDs
+    for (const data of recipientsData) {
+      counter.seq += 1;
+      recipients.push(new this({
+        ...data,
+        recipientId: counter.seq
+      }));
+    }
+
+    // Update the counter
+    await Counter.findByIdAndUpdate(
+      'recipientId',
+      { seq: counter.seq },
+      { session, upsert: true }
+    );
+
+    // Save all recipients
+    const savedRecipients = await this.insertMany(recipients, { session });
+    
+    await session.commitTransaction();
+    return savedRecipients;
+  } catch (error) {
+    await session.abortTransaction();
+    throw new Error(`Error in bulk creating recipients: ${error.message}`);
+  } finally {
+    session.endSession();
+  }
+};
 
 export const Recipient = mongoose.model('Recipient', recipientSchema);

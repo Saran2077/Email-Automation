@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import AddToRecipientsModal from './AddToRecipientsModal'
+import { scrapAPI, recipientAPI } from '../utils/apiLayer'
 
 function CustomerScraper() {
   const [customers, setCustomers] = useState([])
@@ -12,14 +14,17 @@ function CustomerScraper() {
   const handleScrapeData = async () => {
     setLoading(true)
     try {
-      const res = await fetch('http://localhost:3000/api/scrap');
-      const data = await res.json();
-      console.log('res: ' + data?.data)
-      setCustomers(data?.data)
+      const response = await scrapAPI.fetchCustomers()
+      if (!response?.data) {
+        throw new Error('No data received from scraping')
+      }
+      setCustomers(response.data)
     } catch (error) {
-      console.error('Error in handleScrapeData:', error);
+      console.error('Error in handleScrapeData:', error)
+      toast.error(error.message || 'Failed to fetch customer data')
+      setCustomers([])
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
@@ -41,14 +46,68 @@ function CustomerScraper() {
 
   const handleAddToRecipients = () => {
     if (selectedCustomers.length === 0) {
-      alert('Please select at least one customer')
+      toast.warning('Please select at least one customer')
       return
     }
     setShowCampaignModal(true)
   }
 
-  const handleAddToRecipientsSubmit = () => {
-    navigate('/recipients')
+  const prepareRecipientPayload = (company, employee) => {
+    if (!company || !employee) {
+      throw new Error('Invalid company or employee data')
+    }
+
+    return {
+      name: employee.name || '',
+      email: employee.email || `contact@${company.Domain || ''}`,
+      company: company.Name || '',
+      country: company.Country || '',
+      city: company.City || '',
+      state: company.State || '',
+      designation: employee.designation || '',
+      linkedinHandle: employee.profileLinks?.linkedinHandle || '',
+      companyDomain: company.Domain || '',
+      stage: 'contact' // Default stage, will be overridden by modal selection
+    }
+  }
+
+  const handleAddToRecipientsSubmit = async (selectedStage) => {
+    if (!selectedStage) {
+      toast.error('Please select a stage')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const recipientsToCreate = selectedCustomers.map(selectionId => {
+        const [companyId, employeeIndex] = selectionId.split('-')
+        const company = customers.find(c => c.id === companyId)
+        const employee = company?.Employee_List[parseInt(employeeIndex)]
+        
+        if (!company || !employee) {
+          throw new Error('Invalid selection')
+        }
+
+        const payload = prepareRecipientPayload(company, employee)
+        payload.stage = selectedStage
+        return payload
+      })
+
+      if (recipientsToCreate.length === 0) {
+        throw new Error('No valid recipients to create')
+      }
+
+      await recipientAPI.bulkCreate(recipientsToCreate)
+      toast.success(`Successfully created ${recipientsToCreate.length} recipients`)
+      setShowCampaignModal(false)
+      setSelectedCustomers([])
+      navigate('/recipients', { replace: true })
+    } catch (error) {
+      console.error('Error creating recipients:', error)
+      toast.error(error.response?.data?.error || error.message || 'Failed to create recipients')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -66,10 +125,10 @@ function CustomerScraper() {
           {customers.length > 0 && (
             <button
               onClick={handleAddToRecipients}
-              disabled={selectedCustomers.length === 0}
+              disabled={selectedCustomers.length === 0 || loading}
               className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:bg-green-300"
             >
-              Upload to active campaign
+              Upload to Recipients
             </button>
           )}
         </div>
@@ -139,6 +198,7 @@ function CustomerScraper() {
           onClose={() => setShowCampaignModal(false)}
           selectedCustomersCount={selectedCustomers.length}
           onSubmit={handleAddToRecipientsSubmit}
+          loading={loading}
         />
       )}
     </div>

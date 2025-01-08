@@ -49,6 +49,26 @@ class RecipientHandler {
         }
     }
 
+    async bulkCreateRecipients(req, res, next) {
+        try {
+            const { recipients } = req.body;
+            
+            if (!Array.isArray(recipients)) {
+                throw new Error('Recipients must be an array');
+            }
+
+            if (recipients.length === 0) {
+                throw new Error('No recipients provided');
+            }
+
+            const createdRecipients = await recipientService.bulkCreateRecipients(recipients);
+            res.status(201).json(createdRecipients);
+        } catch (error) {
+            console.error('Bulk create error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
 }
 
 export default RecipientHandler;

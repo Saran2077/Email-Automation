@@ -21,6 +21,10 @@ class RecipientService {
         return await RecipientRepository.list();
     }
 
+    async bulkCreateRecipients(recipients) {
+        return await RecipientRepository.bulkCreate(recipients);
+    }
+
 }
 
 export default RecipientService;

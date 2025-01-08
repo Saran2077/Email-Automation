@@ -3,6 +3,8 @@ import Sidebar from './components/Sidebar'
 import CustomerScraper from './components/CustomerScraper'
 import RecipientDashboard from './components/RecipientDashboard'
 import MailboxView from './components/MailboxView'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 function App() {
   return (
@@ -18,6 +20,18 @@ function App() {
           </Routes>
         </main>
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </Router>
   )
 }

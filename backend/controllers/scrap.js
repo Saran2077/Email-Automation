@@ -72,8 +72,8 @@ const fetchAllCompanies = async (req, res) => {
     }
 
     const companiesList = await fetchCompaniesList(filters);
-    console.log('companiesList', companiesList)
-    for (const company of companiesList.result) {
+    console.log('companiesList', JSON.stringify(companiesList?.result?.[0]))
+    for (const company of companiesList?.result) {
         const processedData = extractRequiredFields(company);
         allCompanyData.push(processedData);
     }
@@ -183,7 +183,7 @@ const fetchCompaniesList = async(filters={}) => {
 
         return await response.json();
     } catch (error) {
-        console.error(`Error fetching companies list on page ${page}: ${error.message}`);
+        console.error(`Error fetching companies list on page : ${error.message}`);
         return null;
     }
 }
