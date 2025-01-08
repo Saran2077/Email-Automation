@@ -1,8 +1,9 @@
-export const sendMail = async (jsonEmail) => {
-    const emailData = JSON.parse(jsonEmail.generated_email);
+export const sendMail = async (emailData) => {
+    // const emailData = JSON.parse(jsonEmail.generated_email);
 
     const subject = emailData.subject || emailData.Subject || '';
     const body = emailData.body || emailData.Body || '';
+    const to = emailData.to;
 
     // Create a FormData instance
     const form = new FormData();
