@@ -3,9 +3,12 @@ import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-function CreateCampaignModal({ onClose, selectedCustomers, onSubmit, loading }) {
+function CreateCampaignModal({ onClose, onSubmit, selectedCustomers }) {
   const navigate = useNavigate()
-  
+  const [campaignData, setCampaignData] = useState({
+    name: '',
+    description: '',
+  })
   const [dropdownList, setDropdownList] = useState([])
   const [selectedList, setSelectedList] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -96,7 +99,7 @@ function CreateCampaignModal({ onClose, selectedCustomers, onSubmit, loading }) 
     <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50">
       <div className="bg-white w-[600px] rounded-lg shadow-xl">
         <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-xl font-semibold">Upload to Recipients List</h2>
+          <h2 className="text-xl font-semibold">Upload to ActiveCampaign</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <XMarkIcon className="h-6 w-6" />
           </button>

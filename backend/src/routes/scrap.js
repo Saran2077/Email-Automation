@@ -3,6 +3,6 @@ import { fetchAllCompanies } from '../../controllers/scrap.js';
 
 const router = express.Router();
 
-router.get('/', fetchAllCompanies)
+router.post('/', fetchAllCompanies)
 
 export default router

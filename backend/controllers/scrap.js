@@ -65,11 +65,29 @@ const fetchAllCompanies = async (req, res) => {
     /**
      * Fetch and process all companies with pagination
      */
+
+    const { filter, from } = req.body;
+
+    console.log(filter, from);
+
+    // Function to remove keys with empty arrays
+    const removeEmptyArrayKeys = (obj) => {
+        return Object.fromEntries(Object.entries(obj).filter(([_, value]) => !Array.isArray(value) || value.length > 0));
+    }
+
+    // Update filters to remove keys with empty arrays
+    const filteredFilters = removeEmptyArrayKeys(filter);
+    let params = {
+        filter: filteredFilters,
+    }
+
+    if (from) {
+        params['from'] = from;
+    }
+
     const allCompanyData = [];
 
-    var filters = {
-        country: ["India"]
-    }
+    const companiesList = await fetchCompaniesList(filteredFilters);
 
     const companiesList = await fetchCompaniesList(filters);
     // console.log('companiesList', JSON.stringify(companiesList?.result?.[0]))
@@ -163,19 +181,12 @@ const fetchCompaniesList = async(filters={}) => {
             "Content-Type": "application/json"
         }
         const endpoint = `${baseUrl}/companies`;
-        const params = {
-            filter: {
-                ...filters
-            }
-        };
 
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: headers,
-            body: JSON.stringify(params)
+            body: JSON.stringify(filters)
         });
-
-        console.log('fetched list of companies with pagination', response)
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
