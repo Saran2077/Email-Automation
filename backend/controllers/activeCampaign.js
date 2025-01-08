@@ -1,5 +1,5 @@
 import { emailData } from "../index.js";
-import { getContactData, getOrganizationData, getCustomFieldData, getAllLists } from "../src/services/activeCampaign.js"
+import { getContactData, getOrganizationData, getCustomFieldData, getAllLists, createAccount, bulkImportContacts } from "../src/services/activeCampaign.js"
 import { generateEmailsFromJsonList } from "../src/services/email_generation.js";
 import { sendMail } from "../utils/sendMail.js";
 
@@ -119,4 +119,77 @@ async function handleAddContact(req, res) {
     }
 }
 
-export { handleSendMail, handleAddContact, handleGetLists }
+async function handleContactBulkUpload(req, res) {
+  try {
+    const { list_id, data } = req.body;
+    const employeeData = [];
+
+    for (let company of data) {
+      const resp = await createAccount({
+        account: {
+            owner: 1,
+            name: company.Name,
+            accountUrl: company.Domain,
+            fields: [
+                { customFieldId: "1", fieldValue: company.Description },
+                { customFieldId: "14", fieldValue: company.LinkedIn_URL },
+                { customFieldId: "15", fieldValue: company.Business_Models },
+                { customFieldId: "16", fieldValue: company.Primary_Industry }
+            ]
+        }
+      });
+      const companyId = resp.account?.id || "";
+
+      for (const employee of company.Employee_List || []) {
+        const primaryEmail = `user${Math.floor(Math.random() * 10000)}@gmail.com` || employee.emailInfo?.primaryEmail || '';
+        console.log('Employee Info', {
+            email: primaryEmail,
+            firstName: employee.name?.replace(" ", "") || '',
+            lastName: "",
+            fieldValues: [
+                { field: "1", value: employee.profileLinks?.linkedinHandle || '' }
+            ]
+        });
+        employeeData.push({
+            email: primaryEmail,
+            first_name: employee.name?.replace(" ", "") || '',
+            last_name: "",
+            customer_acct_name: company?.Name,
+            fields: [
+                { id: 2, value: employee.profileLinks?.linkedinHandle || '' }
+            ],
+            subscribe: [
+              { "listid": list_id },
+            ]
+        });
+      }
+    }
+
+    if (employeeData.length > 0) {
+      console.log("Bulk Importing Contacts...", {
+        contacts: employeeData,
+        callback: {
+          requestType: "POST",
+          detailed_results: "true",
+          url: "www.google.com"
+        }
+      });
+
+      const bulkUpload = await bulkImportContacts({
+        contacts: employeeData,
+        callback: {
+          requestType: "POST",
+          detailed_results: "true",
+          url: "www.google.com"
+        }
+      });
+    }
+
+    console.log("Bulk Upload completed");
+    return res.status(200).json({ message: "Bulk Upload completed" });
+  } catch (error) {
+    console.log(`Error in handleContactBulk: ${error}`);
+  }
+}
+
+export { handleSendMail, handleAddContact, handleGetLists, handleContactBulkUpload }
