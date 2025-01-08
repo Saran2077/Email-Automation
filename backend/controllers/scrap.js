@@ -87,9 +87,8 @@ const fetchAllCompanies = async (req, res) => {
 
     const allCompanyData = [];
 
-    const companiesList = await fetchCompaniesList(filteredFilters);
+    const companiesList = await fetchCompaniesList(params);
 
-    const companiesList = await fetchCompaniesList(filters);
     // console.log('companiesList', JSON.stringify(companiesList?.result?.[0]))
     for (const company of companiesList?.result) {
         const processedData = extractRequiredFields(company);
