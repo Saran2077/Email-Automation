@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { toast } from 'react-toastify'
 
 function CreateCampaignModal({ onClose, selectedCustomers, onSubmit, loading }) {
   const navigate = useNavigate()
@@ -54,30 +55,41 @@ function CreateCampaignModal({ onClose, selectedCustomers, onSubmit, loading }) 
 
     
       // Call Active Campaign API
-      await fetch('http://localhost:3000/api/activeCampaign/contact/bulk-upload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          list_id: selectedList,
-          data: newCampaignId
-        }),
-      })
+
+    try {
+        await fetch('http://localhost:3000/api/activeCampaign/contact/bulk-upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            list_id: selectedList,
+            data: newCampaignId
+          }),
+        })
 
         // Then call the parent's onSubmit for recipients API
         await onSubmit()
 
 
-     
-      
-      onClose()
-      navigate(`/campaigns/${newCampaignId}`)
+      // Check if the response is ok (status in the range 200-299)
+      if (!response.ok) {
+        const errorData = await response.json(); // Attempt to parse error response
+        throw new Error(errorData?.meta?.message || 'Error uploading contacts');
+      }
+
+      const responseData = await response.json(); // Parse the successful response
+      if (responseData.meta.status) {
+        onClose()
+        toast.success(responseData.meta.message)
+      } else {
+        throw new Error(responseData.meta.message || 'Unknown error occurred');
+      }
     } catch (error) {
-      console.error('Error:', error)
-      toast.error('Failed to upload contacts')
+      console.error('Error uploading contacts:', error.message)
+      toast.error(`Error uploading contacts: ${error.message}`)
     } finally {
-      setIsLoading(false)
+      setIsLoading(false) // Ensure loading state is reset
     }
   }
 

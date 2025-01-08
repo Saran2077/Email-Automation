@@ -186,9 +186,20 @@ async function handleContactBulkUpload(req, res) {
     }
 
     console.log("Bulk Upload completed");
-    return res.status(200).json({ message: "Bulk Upload completed" });
+    return res.status(200).json({ 
+      meta: {
+        status: true,
+        message: "Bulk Upload completed successfully"
+      },
+     });
   } catch (error) {
     console.log(`Error in handleContactBulk: ${error}`);
+    return res.status(500).json({
+      meta: {
+        status: false,
+        message: error.message
+      },
+      });
   }
 }
 
