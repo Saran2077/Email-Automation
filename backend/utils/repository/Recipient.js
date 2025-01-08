@@ -15,7 +15,6 @@ class RecipientRepository {
   async getById(recipientId) {
     try {
       return await Recipient.findOne({ recipientId })
-        .populate('campaigns.campaign')
         .populate('emails.sent')
         .populate('emails.received')
         .populate('emails.starred')
@@ -30,7 +29,6 @@ class RecipientRepository {
     try {
       const skip = (page - 1) * limit;
       const query = Recipient.find(filters)
-        .populate('campaigns.campaign')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -58,7 +56,7 @@ class RecipientRepository {
         { recipientId },
         { $set: updateData },
         { new: true, runValidators: true }
-      ).populate('campaigns.campaign');
+      );
 
       if (!recipient) {
         throw new Error('Recipient not found');
@@ -84,9 +82,9 @@ class RecipientRepository {
   }
 
   // Get recipients by stage
-  async getByStage(stage, page = 1, limit = 10) {
+  async getByStage(stage) {
     try {
-      return await this.list({ stage }, page, limit);
+      return await Recipient.find({ stage }).sort({ createdAt: -1 });
     } catch (error) {
       throw new Error(`Error fetching recipients by stage: ${error.message}`);
     }
@@ -101,80 +99,20 @@ class RecipientRepository {
     }
   }
 
-  // Add recipient to campaign
-  async addToCampaign(recipientId, campaignId) {
+  // Update recipient metrics
+  async updateMetrics(recipientId, metricType, increment = true) {
     try {
-      const recipient = await Recipient.findOneAndUpdate(
+      const update = {
+        [`metrics.${metricType}`]: increment ? 1 : -1
+      };
+      
+      return await Recipient.findOneAndUpdate(
         { recipientId },
-        {
-          $addToSet: {
-            campaigns: {
-              campaign: campaignId,
-              status: 'pending'
-            }
-          }
-        },
+        { $inc: update },
         { new: true }
-      ).populate('campaigns.campaign');
-
-      if (!recipient) {
-        throw new Error('Recipient not found');
-      }
-
-      return recipient;
+      );
     } catch (error) {
-      throw new Error(`Error adding recipient to campaign: ${error.message}`);
-    }
-  }
-
-  // Remove recipient from campaign
-  async removeFromCampaign(recipientId, campaignId) {
-    try {
-      const recipient = await Recipient.findOneAndUpdate(
-        { recipientId },
-        {
-          $pull: {
-            campaigns: {
-              campaign: campaignId
-            }
-          }
-        },
-        { new: true }
-      ).populate('campaigns.campaign');
-
-      if (!recipient) {
-        throw new Error('Recipient not found');
-      }
-
-      return recipient;
-    } catch (error) {
-      throw new Error(`Error removing recipient from campaign: ${error.message}`);
-    }
-  }
-
-  // Update recipient's campaign status
-  async updateCampaignStatus(recipientId, campaignId, status) {
-    try {
-      const recipient = await Recipient.findOneAndUpdate(
-        { 
-          recipientId,
-          'campaigns.campaign': campaignId
-        },
-        {
-          $set: {
-            'campaigns.$.status': status
-          }
-        },
-        { new: true }
-      ).populate('campaigns.campaign');
-
-      if (!recipient) {
-        throw new Error('Recipient or campaign association not found');
-      }
-
-      return recipient;
-    } catch (error) {
-      throw new Error(`Error updating campaign status: ${error.message}`);
+      throw new Error(`Error updating recipient metrics: ${error.message}`);
     }
   }
 
@@ -185,7 +123,6 @@ class RecipientRepository {
         { recipientId: { $in: recipientIds } },
         { $set: updateData }
       );
-
       return result;
     } catch (error) {
       throw new Error(`Error performing bulk update: ${error.message}`);
@@ -198,7 +135,8 @@ class RecipientRepository {
       const query = {
         $or: [
           { name: { $regex: searchTerm, $options: 'i' } },
-          { email: { $regex: searchTerm, $options: 'i' } }
+          { email: { $regex: searchTerm, $options: 'i' } },
+          { company: { $regex: searchTerm, $options: 'i' } }
         ]
       };
 

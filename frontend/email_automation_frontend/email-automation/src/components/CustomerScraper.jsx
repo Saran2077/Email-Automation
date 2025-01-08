@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import CreateCampaignModal from './CreateCampaignModal'
+import AddToRecipientsModal from './AddToRecipientsModal'
 
 function CustomerScraper() {
   const [customers, setCustomers] = useState([])
@@ -39,12 +39,16 @@ function CustomerScraper() {
     )
   }
 
-  const handleCreateCampaign = () => {
+  const handleAddToRecipients = () => {
     if (selectedCustomers.length === 0) {
       alert('Please select at least one customer')
       return
     }
     setShowCampaignModal(true)
+  }
+
+  const handleAddToRecipientsSubmit = () => {
+    navigate('/recipients')
   }
 
   return (
@@ -61,7 +65,7 @@ function CustomerScraper() {
           </button>
           {customers.length > 0 && (
             <button
-              onClick={handleCreateCampaign}
+              onClick={handleAddToRecipients}
               disabled={selectedCustomers.length === 0}
               className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:bg-green-300"
             >
@@ -131,9 +135,10 @@ function CustomerScraper() {
       )}
 
       {showCampaignModal && (
-        <CreateCampaignModal
+        <AddToRecipientsModal
           onClose={() => setShowCampaignModal(false)}
           selectedCustomersCount={selectedCustomers.length}
+          onSubmit={handleAddToRecipientsSubmit}
         />
       )}
     </div>
