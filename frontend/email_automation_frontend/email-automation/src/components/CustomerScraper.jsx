@@ -27,7 +27,7 @@ function CustomerScraper() {
     const fetchCustomers = async () => {
       setLoading(true)
       try {
-        const response = await scrapAPI.fetchCustomers({ filter: filters, from: currentPage * 20})
+        const response = await scrapAPI.fetchCustomers({ filter: filters, from: (currentPage - 1) * 20})
         if (!response?.data) {
           throw new Error('No data received from scraping')
         }

@@ -87,7 +87,9 @@ const fetchAllCompanies = async (req, res) => {
 
     const allCompanyData = [];
 
-    const companiesList = await fetchCompaniesList(filteredFilters);
+    console.log(params)
+
+    const companiesList = await fetchCompaniesList(params);
 
     for (const company of companiesList?.result || []) {
         const processedData = extractRequiredFields(company);
@@ -180,14 +182,16 @@ const fetchCompaniesList = async(filters={}) => {
         }
         const endpoint = `${baseUrl}/companies`;
 
+        console.log(JSON.stringify({...filters}))
+
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: headers,
-            body: JSON.stringify(filters)
+            body: JSON.stringify({...filters})
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status},  statusText: ${response.statusText}`);
         }
 
         return await response.json();
