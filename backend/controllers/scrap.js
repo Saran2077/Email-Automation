@@ -1,6 +1,6 @@
 // src/controllers/scrap.js
 
-import { createAccount, createContact, createContactAssociation } from '../services/activeCampaign.js'; // Adjust the import path as necessary
+import { createAccount, createContact, createContactAssociation } from '../src/services/activeCampaign.js'; // Adjust the import path as necessary
 import fs from 'fs';
 
 const baseUrl = 'https://platform.tracxn.com/api/2.2/playground';
@@ -56,22 +56,29 @@ const extractRequiredFields = (companyData) => {
         Business_Models: businessModels.join('>'),
         Domain: domain,
         LinkedIn_URL: linkedinUrl,
-        Annual_Revenue: annualRevenue
+        Annual_Revenue: annualRevenue,
+        Employee_List: companyData?.employeeInfo?.employeeList || []
     };
 }
 
-const fetchAllCompanies = async (outputFile = "company_data.csv", batchSize = 100) => {
+const fetchAllCompanies = async (req, res) => {
     /**
      * Fetch and process all companies with pagination
      */
-    let page = 1;
     const allCompanyData = [];
-    console.log('allCompanyData')
 
-    const companiesList = await fetchCompaniesList(page, batchSize);
+    var filters = {
+        country: ["India"]
+    }
+
+    const companiesList = await fetchCompaniesList(filters);
     console.log('companiesList', companiesList)
     for (const company of companiesList.result) {
         const processedData = extractRequiredFields(company);
+        allCompanyData.push(processedData);
+    }
+
+        return res.status(200).json({ data: allCompanyData })
         const resp = await createAccount({
             account: {
                 owner: 1,
@@ -126,7 +133,7 @@ const fetchAllCompanies = async (outputFile = "company_data.csv", batchSize = 10
                     console.log("Association", association);
                 }
             }
-        }
+        
 
         allCompanyData.push(processedData);
 
@@ -145,7 +152,7 @@ const fetchAllCompanies = async (outputFile = "company_data.csv", batchSize = 10
     }
 }
 
-const fetchCompaniesList = async(page = 1, pageSize = 100) => {
+const fetchCompaniesList = async(filters={}) => {
     /**
      * Fetch list of companies with pagination
      */
@@ -158,7 +165,7 @@ const fetchCompaniesList = async(page = 1, pageSize = 100) => {
         const endpoint = `${baseUrl}/companies`;
         const params = {
             filter: {
-                city: ["Chennai"]
+                ...filters
             }
         };
 

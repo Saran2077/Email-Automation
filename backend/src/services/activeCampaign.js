@@ -44,6 +44,29 @@ async function getOrganizationData(orgId) {
     }
 }
 
+async function getAllLists() {
+    /**
+     * Retrieve organization data from ActiveCampaign API
+     */
+    const headers = {
+        'Api-Token': process.env.ACTIVE_CAMPAIGN_API_KEY,
+        'Content-Type': 'application/json'
+    };
+    const url = `${process.env.ACTIVE_CAMPAIGN_URL}/lists`;
+
+    try {
+        const response = await fetch(url, { method: 'GET', headers });
+        if (!response.ok) {
+            throw new Error(`Error fetching organization data: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data.lists;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
 async function getCustomFieldData(url) {
     /**
      * Retrieve custom field data from ActiveCampaign API
@@ -139,4 +162,4 @@ async function createContactAssociation(contactData) {
     }
 }
 
-export { getContactData, getOrganizationData, getCustomFieldData, createAccount, createContact, createContactAssociation };
+export { getContactData, getOrganizationData, getCustomFieldData, createAccount, createContact, createContactAssociation, getAllLists };

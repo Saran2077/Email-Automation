@@ -9,18 +9,18 @@ function CustomerScraper() {
   const [showCampaignModal, setShowCampaignModal] = useState(false)
   const navigate = useNavigate()
 
-  // Dummy data for demonstration
-  const dummyCustomers = [
-    { id: 1, name: 'John Doe', email: 'john@example.com', company: 'ABC Corp' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', company: 'XYZ Ltd' },
-  ]
-
   const handleScrapeData = async () => {
     setLoading(true)
-    setTimeout(() => {
-      setCustomers(dummyCustomers)
-      setLoading(false)
-    }, 1000)
+    try {
+      const res = await fetch('http://localhost:3000/api/scrap');
+      const data = await res.json();
+      console.log('res: ' + data?.data)
+      setCustomers(data?.data)
+    } catch (error) {
+      console.error('Error in handleScrapeData:', error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   const handleSelectCustomer = (customerId) => {
@@ -65,7 +65,7 @@ function CustomerScraper() {
               disabled={selectedCustomers.length === 0}
               className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:bg-green-300"
             >
-              Create Campaign
+              Upload to active campaign
             </button>
           )}
         </div>
@@ -84,33 +84,49 @@ function CustomerScraper() {
               <span className="ml-2">Select All</span>
             </label>
           </div>
+          <div className='overflow-x-auto'>
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Select</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Short Bio</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Designation</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LinkedIn URL</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Description</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company LinkedIn URL</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {customers.map(customer => (
-                <tr key={customer.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={selectedCustomers.includes(customer.id)}
-                      onChange={() => handleSelectCustomer(customer.id)}
-                      className="rounded border-gray-300"
-                    />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{customer.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{customer.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{customer.company}</td>
-                </tr>
+              {customers.map(company => (
+                company?.Employee_List?.map((employee) => (
+                  <tr key={company.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedCustomers.includes(company.id)}
+                        onChange={() => handleSelectCustomer(company.id)}
+                        className="rounded border-gray-300"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">{employee?.name || "--"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{employee?.shortBio || "--"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{employee?.designation || "--"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{employee?.email || "--"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{employee?.profileLinks?.linkedinHandle || "--"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{company?.Name || "--"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{company?.Description || "--"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{company?.Domain || "--"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{company?.LinkedIn_URL || "--"}</td>
+                  </tr>
+                ))
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import { emailData } from "../index.js";
-import { getContactData, getOrganizationData, getCustomFieldData } from "../src/services/activeCampaign.js"
+import { getContactData, getOrganizationData, getCustomFieldData, getAllLists } from "../src/services/activeCampaign.js"
 import { generateEmailsFromJsonList } from "../src/services/email_generation.js";
 import { sendMail } from "../utils/sendMail.js";
 
@@ -101,12 +101,22 @@ async function handleSendMail(request, response) {
   }
 }
 
+
+async function handleGetLists(req, res) {
+  try {
+    const allLists = await getAllLists();
+    return res.status(200).json({ data: allLists});
+  } catch (error) {
+    console.log(`Error in getLists: ${error.message}`);
+  }
+}
+
 async function handleAddContact(req, res) {
     try {
         
     } catch (error) {
-        console.log(`Error in handleAddContact: {error}`);
+        console.log(`Error in handleAddContact: ${error}`);
     }
 }
 
-export { handleSendMail, handleAddContact }
+export { handleSendMail, handleAddContact, handleGetLists }
