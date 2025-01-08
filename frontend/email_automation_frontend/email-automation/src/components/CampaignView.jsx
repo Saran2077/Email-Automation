@@ -4,7 +4,8 @@ import {
   UserGroupIcon, 
   CalendarIcon, 
   ChartBarIcon,
-  EnvelopeIcon 
+  EnvelopeIcon,
+  UsersIcon 
 } from '@heroicons/react/24/outline'
 
 const STAGES = {
@@ -19,6 +20,7 @@ function CampaignView() {
   const [campaign, setCampaign] = useState(null)
   const [loading, setLoading] = useState(true)
   const [groupedRecipients, setGroupedRecipients] = useState({})
+  const [selectedRecipients, setSelectedRecipients] = useState({})
 
   useEffect(() => {
     // Simulate API call
@@ -77,6 +79,40 @@ function CampaignView() {
       ...prev,
       recipients: updatedRecipients
     }))
+  }
+
+  const handleRecipientSelection = (recipientId, stageKey) => {
+    setSelectedRecipients(prev => ({
+      ...prev,
+      [stageKey]: {
+        ...prev[stageKey],
+        [recipientId]: !prev[stageKey]?.[recipientId]
+      }
+    }))
+  }
+
+  const handleBulkSelection = (stageKey) => {
+    const currentStageRecipients = groupedRecipients[stageKey] || []
+    const allSelected = currentStageRecipients.every(
+      r => selectedRecipients[stageKey]?.[r.id]
+    )
+
+    setSelectedRecipients(prev => ({
+      ...prev,
+      [stageKey]: currentStageRecipients.reduce((acc, recipient) => ({
+        ...acc,
+        [recipient.id]: !allSelected
+      }), {})
+    }))
+  }
+
+  const handleSubscribeToList = (stageKey) => {
+    const selectedIds = Object.entries(selectedRecipients[stageKey] || {})
+      .filter(([_, isSelected]) => isSelected)
+      .map(([id]) => id)
+    
+    console.log(`Subscribe recipients from ${stageKey}:`, selectedIds)
+    // TODO: Implement subscription logic
   }
 
   if (loading) {
@@ -184,14 +220,36 @@ function CampaignView() {
       {Object.entries(STAGES).map(([stageKey, stageInfo]) => (
         groupedRecipients[stageKey]?.length > 0 && (
           <div key={stageKey} className="bg-white rounded-lg shadow mb-6">
-            <div className="px-6 py-4 border-b">
+            <div className="px-6 py-4 border-b flex justify-between items-center">
               <h3 className="text-lg font-medium">
                 {stageInfo.name} Recipients
               </h3>
+              {Object.values(selectedRecipients[stageKey] || {}).some(Boolean) && (
+                <button
+                  onClick={() => handleSubscribeToList(stageKey)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center"
+                >
+                  <UsersIcon className="h-5 w-5 mr-2" />
+                  Subscribe to List
+                </button>
+              )}
             </div>
             <table className="min-w-full">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <input
+                      type="checkbox"
+                      onChange={() => handleBulkSelection(stageKey)}
+                      checked={
+                        groupedRecipients[stageKey]?.length > 0 &&
+                        groupedRecipients[stageKey]?.every(
+                          r => selectedRecipients[stageKey]?.[r.id]
+                        )
+                      }
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -201,6 +259,14 @@ function CampaignView() {
               <tbody className="divide-y divide-gray-200">
                 {groupedRecipients[stageKey].map(recipient => (
                   <tr key={recipient.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedRecipients[stageKey]?.[recipient.id] || false}
+                        onChange={() => handleRecipientSelection(recipient.id, stageKey)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">{recipient.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{recipient.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap">

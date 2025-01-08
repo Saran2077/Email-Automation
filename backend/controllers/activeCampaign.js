@@ -1,6 +1,6 @@
 import { emailData } from "../index.js";
-import { getContactData, getOrganizationData, getCustomFieldData } from "../services/activeCampaign.js"
-import { generateEmailsFromJsonList } from "../services/email_generation.js";
+import { getContactData, getOrganizationData, getCustomFieldData } from "../src/services/activeCampaign.js"
+import { generateEmailsFromJsonList } from "../src/services/email_generation.js";
 import { sendMail } from "../utils/sendMail.js";
 
 async function handleSendMail(request, response) {
