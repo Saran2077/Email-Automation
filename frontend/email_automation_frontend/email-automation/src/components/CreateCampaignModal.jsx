@@ -52,9 +52,7 @@ function CreateCampaignModal({ onClose, selectedCustomers, onSubmit, loading }) 
         return acc;
       }, {}))
 
-      // Then call the parent's onSubmit for recipients API
-      await onSubmit()
-
+    
       // Call Active Campaign API
       await fetch('http://localhost:3000/api/activeCampaign/contact/bulk-upload', {
         method: 'POST',
@@ -66,6 +64,10 @@ function CreateCampaignModal({ onClose, selectedCustomers, onSubmit, loading }) 
           data: newCampaignId
         }),
       })
+
+        // Then call the parent's onSubmit for recipients API
+        await onSubmit()
+
 
      
       
