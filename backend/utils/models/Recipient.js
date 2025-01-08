@@ -14,31 +14,23 @@ const recipientSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    trim: true,
     lowercase: true
   },
-  status: {
+  company: {
     type: String,
-    enum: ['pending', 'sent', 'opened', 'clicked', 'bounced'],
-    default: 'pending'
+    required: true
   },
   stage: {
     type: String,
     enum: ['contact', 'lead', 'deal', 'account'],
     default: 'contact'
   },
-  // Campaign relationship (optional)
-  campaigns: [{
-    campaign: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Campaign'
-    },
-    status: {
-      type: String,
-      enum: ['pending', 'sent', 'opened', 'clicked', 'bounced'],
-      default: 'pending'
-    }
-  }],
+  metrics: {
+    delivered: { type: Number, default: 0 },
+    opened: { type: Number, default: 0 },
+    clicked: { type: Number, default: 0 },
+    failed: { type: Number, default: 0 }
+  },
   // Email tracking
   emails: {
     sent: [{
@@ -62,17 +54,17 @@ const recipientSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Pre-save middleware to auto-increment campaignId
+// Pre-save middleware to auto-increment recipientId
 recipientSchema.pre('save', async function(next) {
-    if (this.isNew) {
-      const counter = await Counter.findByIdAndUpdate(
-        'recipientId',
-        { $inc: { seq: 1 } },
-        { new: true, upsert: true }
-      );
-      this.recipientId = counter.seq;
-    }
-    next();
-  });
+  if (this.isNew) {
+    const counter = await Counter.findByIdAndUpdate(
+      'recipientId',
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+    this.recipientId = counter.seq;
+  }
+  next();
+});
 
 export const Recipient = mongoose.model('Recipient', recipientSchema);

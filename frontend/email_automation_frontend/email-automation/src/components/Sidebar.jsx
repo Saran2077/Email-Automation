@@ -6,7 +6,7 @@ function Sidebar() {
   
   const navigation = [
     { name: 'Customer Data', href: '/customers', icon: UsersIcon },
-    { name: 'Active Campaigns', href: '/campaigns', icon: ChartBarIcon },
+    { name: 'Recipients', href: '/recipients', icon: ChartBarIcon },
     { name: 'Mailbox', href: '/mailbox', icon: InboxIcon },
   ]
 

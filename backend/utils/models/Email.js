@@ -25,10 +25,6 @@ const emailSchema = new mongoose.Schema({
     ref: 'Recipient',
     required: true
   },
-  campaign: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Campaign'
-  },
   status: {
     type: String,
     enum: ['draft', 'sent', 'delivered', 'opened', 'clicked', 'bounced'],
