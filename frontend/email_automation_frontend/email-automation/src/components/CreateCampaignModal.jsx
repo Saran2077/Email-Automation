@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { toast } from 'react-toastify'
 
 function CreateCampaignModal({ onClose, selectedCustomers, onSubmit, loading }) {
   const navigate = useNavigate()
@@ -24,7 +23,7 @@ function CreateCampaignModal({ onClose, selectedCustomers, onSubmit, loading }) 
   const handleSubmit = async(e) => {
     e.preventDefault()
     setIsLoading(true)
-    try {
+
       // First call the Active Campaign API
       const newCampaignId = Object.values(selectedCustomers.reduce((acc, customer) => {
         const key = customer.Name;
@@ -57,7 +56,7 @@ function CreateCampaignModal({ onClose, selectedCustomers, onSubmit, loading }) 
       // Call Active Campaign API
 
     try {
-        await fetch('http://localhost:3000/api/activeCampaign/contact/bulk-upload', {
+        const response = await fetch('http://localhost:3000/api/activeCampaign/contact/bulk-upload', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
