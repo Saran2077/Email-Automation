@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 
-function CreateCampaignModal({ onClose, selectedCustomers }) {
+function CreateCampaignModal({ onClose, selectedCustomers, onSubmit, loading }) {
   const navigate = useNavigate()
-  const [campaignData, setCampaignData] = useState({
-    name: '',
-    description: '',
-  })
+  
   const [dropdownList, setDropdownList] = useState([])
   const [selectedList, setSelectedList] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -25,66 +23,67 @@ function CreateCampaignModal({ onClose, selectedCustomers }) {
   const handleSubmit = async(e) => {
     e.preventDefault()
     setIsLoading(true)
-    console.log(selectedCustomers, "asdasd")
-    const newCampaignId = Object.values(selectedCustomers.reduce((acc, customer) => {
-      // Create a unique key for each company based on the company name
-      const key = customer.Name;
+    try {
+      // First call the Active Campaign API
+      const newCampaignId = Object.values(selectedCustomers.reduce((acc, customer) => {
+        const key = customer.Name;
+        if (!acc[key]) {
+          acc[key] = {
+            Name: customer.Name,
+            Description: customer.Description,
+            Primary_Industry: customer.Primary_Industry,
+            Business_Models: customer.Business_Models,
+            Domain: customer.Domain,
+            LinkedIn_URL: customer.LinkedIn_URL,
+            Annual_Revenue: customer.Annual_Revenue,
+            Employee_List: []
+          };
+        }
+        acc[key].Employee_List.push({
+          designation: customer.designation,
+          id: customer.id,
+          name: customer.name,
+          profileLinks: customer.profileLinks,
+          shortBio: customer.shortBio,
+          isKeyPeople: customer.isKeyPeople,
+          isFoundingMember: customer.isFoundingMember,
+          tracxnId: customer.tracxnId
+        });
+        return acc;
+      }, {}))
 
-      // If the company doesn't exist in the accumulator, create a new entry
-      if (!acc[key]) {
-        acc[key] = {
-          Name: customer.Name,
-          Description: customer.Description,
-          Primary_Industry: customer.Primary_Industry,
-          Business_Models: customer.Business_Models,
-          Domain: customer.Domain,
-          LinkedIn_URL: customer.LinkedIn_URL,
-          Annual_Revenue: customer.Annual_Revenue,
-          Employee_List: [] // Initialize Employee_List as an empty array
-        };
-      }
+      // Then call the parent's onSubmit for recipients API
+      await onSubmit()
 
-      // Push the employee details into the Employee_List
-      acc[key].Employee_List.push({
-        designation: customer.designation,
-        id: customer.id,
-        name: customer.name,
-        profileLinks: customer.profileLinks,
-        shortBio: customer.shortBio,
-        isKeyPeople: customer.isKeyPeople,
-        isFoundingMember: customer.isFoundingMember,
-        tracxnId: customer.tracxnId
-      });
+      // Call Active Campaign API
+      await fetch('http://localhost:3000/api/activeCampaign/contact/bulk-upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          list_id: selectedList,
+          data: newCampaignId
+        }),
+      })
 
-      return acc;
-    }, {}))
-    console.log(newCampaignId)
-    const response = await fetch('http://localhost:3000/api/activeCampaign/contact/bulk-upload', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        list_id: selectedList,
-        data: newCampaignId
-      }),
-    })
-
-    
-    // Store campaign data or make API call here
-    console.log('Campaign Data:', campaignData)
-    
-    setIsLoading(false)
-    // Close modal and redirect to campaign view
-    onClose()
-    navigate(`/campaigns/${newCampaignId}`)
+     
+      
+      onClose()
+      navigate(`/campaigns/${newCampaignId}`)
+    } catch (error) {
+      console.error('Error:', error)
+      toast.error('Failed to upload contacts')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50">
       <div className="bg-white w-[600px] rounded-lg shadow-xl">
         <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-xl font-semibold">Upload to ActiveCampaign</h2>
+          <h2 className="text-xl font-semibold">Upload to Recipients List</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <XMarkIcon className="h-6 w-6" />
           </button>

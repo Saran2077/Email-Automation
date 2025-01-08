@@ -76,23 +76,24 @@ function CustomerScraper() {
   }
 
   const handleAddToRecipientsSubmit = async (selectedStage) => {
-    if (!selectedStage) {
-      toast.error('Please select a stage')
-      return
-    }
+    // if (!selectedStage) {
+    //   toast.error('Please select a stage')
+    //   return
+    // }
 
     setLoading(true)
     try {
-      const recipientsToCreate = selectedCustomers.map(selectionId => {
-        const [companyId, employeeIndex] = selectionId.split('-')
-        const company = customers.find(c => c.id === companyId)
-        const employee = company?.Employee_List[parseInt(employeeIndex)]
-        
-        if (!company || !employee) {
-          throw new Error('Invalid selection')
+      const recipientsToCreate = selectedCustomers.map(customer => {
+        if (!customer) {
+          throw new Error('Invalid customer data')
         }
 
-        const payload = prepareRecipientPayload(company, employee)
+        const payload = prepareRecipientPayload(customer, {
+          name: customer.name,
+          email: customer.email,
+          designation: customer.designation,
+          profileLinks: customer.profileLinks
+        })
         payload.stage = selectedStage
         return payload
       })
@@ -205,7 +206,7 @@ function CustomerScraper() {
         <CreateCampaignModal
           onClose={() => setShowCampaignModal(false)}
           selectedCustomers={selectedCustomers}
-          // onSubmit={handleAddToRecipientsSubmit}
+          onSubmit={handleAddToRecipientsSubmit}
           loading={loading}
         />
       )}
