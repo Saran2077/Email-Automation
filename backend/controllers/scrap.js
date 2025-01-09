@@ -89,13 +89,12 @@ const fetchAllCompanies = async (req, res) => {
 
     const companiesList = await fetchCompaniesList(params);
 
-    // console.log('companiesList', JSON.stringify(companiesList?.result?.[0]))
-    for (const company of companiesList?.result) {
+    for (const company of companiesList?.result || []) {
         const processedData = extractRequiredFields(company);
         allCompanyData.push(processedData);
     }
 
-        return res.status(200).json({ data: allCompanyData })
+        return res.status(200).json({ data: allCompanyData, meta: { total_rows: companiesList?.total_count} })
         const resp = await createAccount({
             account: {
                 owner: 1,
@@ -181,14 +180,16 @@ const fetchCompaniesList = async(filters={}) => {
         }
         const endpoint = `${baseUrl}/companies`;
 
+        console.log(JSON.stringify({...filters}))
+
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: headers,
-            body: JSON.stringify(filters)
+            body: JSON.stringify({...filters})
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status},  statusText: ${response.statusText}`);
         }
 
         return await response.json();
