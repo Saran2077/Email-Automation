@@ -87,8 +87,6 @@ const fetchAllCompanies = async (req, res) => {
 
     const allCompanyData = [];
 
-    console.log(params)
-
     const companiesList = await fetchCompaniesList(params);
 
     for (const company of companiesList?.result || []) {
@@ -96,7 +94,7 @@ const fetchAllCompanies = async (req, res) => {
         allCompanyData.push(processedData);
     }
 
-        return res.status(200).json({ data: allCompanyData })
+        return res.status(200).json({ data: allCompanyData, meta: { total_rows: companiesList?.total_count} })
         const resp = await createAccount({
             account: {
                 owner: 1,

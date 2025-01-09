@@ -7,7 +7,12 @@ import FilterModel from './FilterModel'
 import { Pagination } from 'antd'
 
 function CustomerScraper() {
-  const [customers, setCustomers] = useState([])
+  const [customers, setCustomers] = useState({
+    meta: {
+      total_rows: 0,
+    },
+    data: []
+  })
   const [selectedCustomers, setSelectedCustomers] = useState([])
   const [loading, setLoading] = useState(false)
   const [showCampaignModal, setShowCampaignModal] = useState(false)
@@ -31,11 +36,11 @@ function CustomerScraper() {
         if (!response?.data) {
           throw new Error('No data received from scraping')
         }
-        setCustomers(response.data)
+        setCustomers(response)
       } catch (error) {
         console.error('Error in useEffect:', error)
         toast.error(error.message || 'Failed to fetch customer data')
-        setCustomers([])
+        setCustomers({})
       } finally {
         setLoading(false)
       }
@@ -61,12 +66,12 @@ function CustomerScraper() {
       if (!response?.data) {
         throw new Error('No data received from scraping')
       }
-      setCustomers(response.data)
+      setCustomers(response)
       setShowFilterModal(false)
     } catch (error) {
       console.error('Error in handleScrapeData:', error)
       toast.error(error.message || 'Failed to fetch customer data')
-      setCustomers([])
+      setCustomers({})
     } finally {
       setLoading(false)
     }
@@ -82,9 +87,9 @@ function CustomerScraper() {
 
   const handleSelectAll = () => {
     setSelectedCustomers(
-      selectedCustomers.length === customers.length
+      selectedCustomers.length === customers?.data.length
         ? []
-        : customers.flatMap(customer => customer?.Employee_List?.map(employee => ({...employee, ...customer, Employee_List: undefined})))
+        : customers?.data.flatMap(customer => customer?.Employee_List?.map(employee => ({...employee, ...customer, Employee_List: undefined})))
     )
   }
 
@@ -167,7 +172,7 @@ function CustomerScraper() {
           >
             {loading ? 'Scraping...' : 'Scrape Customer Data'}
           </button>
-          {customers.length > 0 && (
+          {customers?.data.length > 0 && (
             <button
               onClick={handleAddToRecipients}
               disabled={selectedCustomers.length === 0 || loading}
@@ -187,13 +192,13 @@ function CustomerScraper() {
         />
       )}
 
-      {customers.length > 0 && (
+      {customers?.data.length > 0 && (
         <div className="bg-white rounded-lg shadow">
           <div className="p-4 border-b">
             <label className="flex items-center">
               <input
                 type="checkbox"
-                checked={selectedCustomers.length === customers.length}
+                checked={selectedCustomers.length === customers?.data.length}
                 onChange={handleSelectAll}
                 className="rounded border-gray-300"
               />
@@ -217,7 +222,7 @@ function CustomerScraper() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {customers.map(company => (
+              {customers?.data.map(company => (
                 company?.Employee_List?.map((employee) => (
                   <tr key={employee.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -252,7 +257,7 @@ function CustomerScraper() {
             <Pagination
               current={currentPage}
               onChange={setCurrentPage}
-              total={10000}
+              total={customers?.meta?.total_rows}
               pageSize={20}
               showSizeChanger={false}
             />
