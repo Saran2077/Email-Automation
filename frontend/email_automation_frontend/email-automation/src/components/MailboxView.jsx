@@ -30,6 +30,17 @@ function MailboxView() {
   const [minimizedEmails, setMinimizedEmails] = useState([])
   const [isMinimized, setIsMinimized] = useState(false)
   const [editedEmail, setEditedEmail] = useState(null)
+  const [showComposeModal, setShowComposeModal] = useState(false)
+  const [newEmail, setNewEmail] = useState({
+    to: '',
+    subject: '',
+    body: ''
+  })
+  const [formErrors, setFormErrors] = useState({
+    to: '',
+    subject: '',
+    body: ''
+  });
 
   // Fetch all emails on initial load
   useEffect(() => {
@@ -64,12 +75,11 @@ function MailboxView() {
     }
   }, [selectedEmail]);
 
-  const fetchDraftEmails = async () => {
+  const fetchDraftEmails = async (showToast = false) => {
     try {
       setLoading(true);
       const response = await mailboxAPI.listDrafts();
       
-      // Transform the API response to match our email format
       const draftEmails = response.data.data.drafts.map(draft => ({
         id: draft.emailId,
         subject: draft.subject,
@@ -86,23 +96,27 @@ function MailboxView() {
         drafts: draftEmails
       }));
 
-      toast.success('Draft saved successfully!');
+      // Only show toast if explicitly requested
+      if (showToast) {
+        toast.success('Draft saved successfully!');
+      }
 
     } catch (err) {
       setError('Failed to fetch draft emails');
-      toast.error('Failed to fetch draft emails');
+      if (showToast) {
+        toast.error('Failed to fetch draft emails');
+      }
       console.error('Error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchSentEmails = async () => {
+  const fetchSentEmails = async (showToast = false) => {
     try {
       setLoading(true);
       const response = await mailboxAPI.listSentEmails();
       
-      // Fix the response mapping to account for nested data structure
       const sentEmails = response.data.data.sent.map(sent => ({
         id: sent.emailId,
         subject: sent.subject,
@@ -119,11 +133,16 @@ function MailboxView() {
         sent: sentEmails
       }));
 
-      toast.success('Email sent successfully!');
+      // Only show toast if explicitly requested
+      if (showToast) {
+        toast.success('Email sent successfully!');
+      }
 
     } catch (err) {
       setError('Failed to fetch sent emails');
-      toast.error('Failed to fetch sent emails');
+      if (showToast) {
+        toast.error('Failed to fetch sent emails');
+      }
       console.error('Error:', err);
     } finally {
       setLoading(false);
@@ -165,77 +184,271 @@ function MailboxView() {
   };
 
   const handleSaveDraft = async () => {
+    // Reset previous errors
+    setFormErrors({
+      to: '',
+      subject: '',
+      body: ''
+    });
+
+    // For drafts, we'll only validate if fields are filled - if they are, they should be valid
+    let hasErrors = false;
+    const errors = {
+      to: '',
+      subject: '',
+      body: ''
+    };
+
+    // Only validate email format if an email is provided
+    if (editedEmail.to.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editedEmail.to.trim())) {
+      errors.to = 'Please enter a valid email address';
+      hasErrors = true;
+    }
+
+    // At least one field should have content to save as draft
+    if (!editedEmail.to.trim() && !editedEmail.subject.trim() && !editedEmail.body.trim()) {
+      errors.body = 'Please enter some content before saving as draft';
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
+      setFormErrors(errors);
+      return;
+    }
+
     try {
-        setLoading(true);
-        
-        const draftData = {
-            emailId: editedEmail.id, 
-            subject: editedEmail.subject,
-            body: editedEmail.body,
-            to: editedEmail.to,
-            // from: "betagamer580@gmail.com" // You might want to get this from user context/state
-        };
+      setLoading(true);
+      
+      const draftData = {
+        emailId: editedEmail.id,
+        subject: editedEmail.subject,
+        body: editedEmail.body,
+        to: editedEmail.to,
+      };
 
-        const response = await mailboxAPI.updateDraft(draftData);
-        
-        // Update local state with the response data
-        setEmails(prev => ({
-            ...prev,
-            drafts: prev.drafts.map(email => 
-                email.id === editedEmail.id 
-                    ? {
-                        id: response.data.emailId,
-                        subject: response.data.subject,
-                        preview: response.data.body,
-                        to: response.data.to.email,
-                        from: response.data.from,
-                        date: new Date(response.data.updatedAt).toLocaleDateString(),
-                        isDraft: true,
-                        starred: response.data.isStarred
-                    }
-                    : email
-            )
-        }));
-
+      const response = await mailboxAPI.updateDraft(draftData);
+      
+      if (response.success) {
         toast.success('Draft saved successfully!');
-
+        // Update local state and continue...
+      } else {
+        throw new Error('Failed to save draft');
+      }
+      
     } catch (error) {
-        console.error('Error saving draft:', error);
-        toast.error('Failed to save draft. Please try again.');
+      console.error('Error saving draft:', error);
+      toast.error('Failed to save draft. Please try again.');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   const handleSendDraft = async (email) => {
-    try {
-        setLoading(true);
-        
-        const emailData = {
-            emailId: email.id,
-            subject: email.subject,
-            body: email.body,
-            to: email.to,
-            from: "betagamer580@gmail.com" // You might want to get this from user context/state
-        };
+    // Reset previous errors
+    setFormErrors({
+      to: '',
+      subject: '',
+      body: ''
+    });
 
-        const response = await mailboxAPI.sendEmail(emailData);
-        
-        if (response.success) {
-            toast.success(response.message || 'Email sent successfully!');
-            setSelectedEmail(null);
-            
-            // Refresh the sent emails list
-            await fetchSentEmails();
-        } else {
-            throw new Error('Failed to send email');
-        }
-        
+    // Validate fields
+    let hasErrors = false;
+    const errors = {
+      to: '',
+      subject: '',
+      body: ''
+    };
+
+    if (!email.to.trim()) {
+      errors.to = 'Recipient email is required';
+      hasErrors = true;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.to.trim())) {
+      errors.to = 'Please enter a valid email address';
+      hasErrors = true;
+    }
+
+    if (!email.subject.trim()) {
+      errors.subject = 'Subject is required';
+      hasErrors = true;
+    }
+
+    if (!email.body.trim()) {
+      errors.body = 'Email body is required';
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
+      setFormErrors(errors);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const emailData = {
+        emailId: email.id,
+        subject: email.subject,
+        body: email.body,
+        to: email.to,
+        from: "betagamer580@gmail.com"
+      };
+
+      const response = await mailboxAPI.sendEmail(emailData);
+      
+      if (response.success) {
+        toast.success('Email sent successfully!');
+        setSelectedEmail(null);
+        await fetchSentEmails();
+      } else {
+        throw new Error('Failed to send email');
+      }
+      
     } catch (error) {
-        console.error('Failed to send email:', error);
-        toast.error('Failed to send email. Please try again.');
+      console.error('Failed to send email:', error);
+      toast.error('Failed to send email. Please try again.');
     } finally {
-        setLoading(false);
+      setLoading(false);
+    }
+  };
+
+  const handleComposeEmail = async () => {
+    // Reset previous errors
+    setFormErrors({
+      to: '',
+      subject: '',
+      body: ''
+    });
+
+    // Validate fields
+    let hasErrors = false;
+    const errors = {
+      to: '',
+      subject: '',
+      body: ''
+    };
+
+    if (!newEmail.to.trim()) {
+      errors.to = 'Recipient email is required';
+      hasErrors = true;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.to.trim())) {
+      errors.to = 'Please enter a valid email address';
+      hasErrors = true;
+    }
+
+    if (!newEmail.subject.trim()) {
+      errors.subject = 'Subject is required';
+      hasErrors = true;
+    }
+
+    if (!newEmail.body.trim()) {
+      errors.body = 'Email body is required';
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
+      setFormErrors(errors);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const emailData = {
+        subject: newEmail.subject,
+        body: newEmail.body,
+        to: newEmail.to,
+        from: "betagamer580@gmail.com"
+      };
+
+      const response = await mailboxAPI.sendEmail(emailData);
+      
+      if (response.success) {
+        toast.success('Email sent successfully!');
+        setShowComposeModal(false);
+        setNewEmail({ to: '', subject: '', body: '' });
+        
+        // Refresh the sent emails list
+        await fetchSentEmails();
+      } else {
+        throw new Error('Failed to send email');
+      }
+      
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      toast.error('Failed to send email. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleComposeInputChange = (field, value) => {
+    setNewEmail(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveAsDraft = async () => {
+    // Reset previous errors
+    setFormErrors({
+      to: '',
+      subject: '',
+      body: ''
+    });
+
+    // For drafts, we'll only validate if fields are filled - if they are, they should be valid
+    let hasErrors = false;
+    const errors = {
+      to: '',
+      subject: '',
+      body: ''
+    };
+
+    // Only validate email format if an email is provided
+    if (newEmail.to.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.to.trim())) {
+      errors.to = 'Please enter a valid email address';
+      hasErrors = true;
+    }
+
+    // At least one field should have content to save as draft
+    if (!newEmail.to.trim() && !newEmail.subject.trim() && !newEmail.body.trim()) {
+      errors.body = 'Please enter some content before saving as draft';
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
+      setFormErrors(errors);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const draftData = {
+        subject: newEmail.subject,
+        body: newEmail.body,
+        to: newEmail.to,
+        from: "betagamer580@gmail.com"
+      };
+
+      const response = await mailboxAPI.createDraft(draftData);
+      
+      if (response.success) {
+        toast.success('Draft saved successfully!');
+        setShowComposeModal(false);
+        setNewEmail({ to: '', subject: '', body: '' });
+        
+        // Refresh the drafts list
+        await fetchDraftEmails();
+      } else {
+        throw new Error('Failed to save draft');
+      }
+      
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+      toast.error('Failed to save draft. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -244,7 +457,10 @@ function MailboxView() {
       {/* Left Sidebar */}
       <div className="w-64 border-r bg-white shadow-sm">
         <div className="p-4">
-          <button className="w-full bg-blue-600 text-white rounded-full px-4 py-2.5 hover:bg-blue-700 transition-colors font-medium text-sm">
+          <button 
+            onClick={() => setShowComposeModal(true)}
+            className="w-full bg-blue-600 text-white rounded-full px-4 py-2.5 hover:bg-blue-700 transition-colors font-medium text-sm"
+          >
             Compose
           </button>
         </div>
@@ -283,7 +499,7 @@ function MailboxView() {
           />
           {(activeFolder === 'drafts' || activeFolder === 'sent') && (
             <button 
-              onClick={activeFolder === 'drafts' ? fetchDraftEmails : fetchSentEmails}
+              onClick={() => activeFolder === 'drafts' ? fetchDraftEmails(true) : fetchSentEmails(true)}
               className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
               title={`Refresh ${activeFolder}`}
             >
@@ -366,36 +582,64 @@ function MailboxView() {
             {/* Email Form */}
             <div className="flex-1 p-4">
               {/* Recipients */}
-              <div className="flex items-center border-b py-2">
-                <span className="text-sm text-gray-600 w-12">To</span>
-                <input 
-                  type="email" 
-                  value={editedEmail.to}
-                  onChange={(e) => handleInputChange('to', e.target.value)}
-                  className="flex-1 outline-none text-sm"
-                  placeholder="recipient@example.com"
-                />
+              <div className="border-b">
+                <div className="flex items-center py-2">
+                  <span className="text-sm text-gray-600 w-12">To</span>
+                  <input 
+                    type="email" 
+                    value={editedEmail.to}
+                    onChange={(e) => {
+                      handleInputChange('to', e.target.value);
+                      if (formErrors.to) {
+                        setFormErrors(prev => ({ ...prev, to: '' }));
+                      }
+                    }}
+                    className="flex-1 outline-none text-sm"
+                    placeholder="recipient@example.com"
+                  />
+                </div>
+                {formErrors.to && (
+                  <div className="text-red-500 text-sm pb-2">{formErrors.to}</div>
+                )}
               </div>
 
               {/* Subject */}
-              <div className="flex items-center border-b py-2">
-                <input 
-                  type="text"
-                  value={editedEmail.subject}
-                  onChange={(e) => handleInputChange('subject', e.target.value)}
-                  placeholder="Subject"
-                  className="flex-1 outline-none text-sm"
-                />
+              <div className="border-b">
+                <div className="flex items-center py-2">
+                  <input 
+                    type="text"
+                    value={editedEmail.subject}
+                    onChange={(e) => {
+                      handleInputChange('subject', e.target.value);
+                      if (formErrors.subject) {
+                        setFormErrors(prev => ({ ...prev, subject: '' }));
+                      }
+                    }}
+                    placeholder="Subject"
+                    className="flex-1 outline-none text-sm"
+                  />
+                </div>
+                {formErrors.subject && (
+                  <div className="text-red-500 text-sm pb-2">{formErrors.subject}</div>
+                )}
               </div>
 
               {/* Body */}
-              <div className="mt-4 h-[300px]">
+              <div className="mt-4 flex flex-col h-[300px]">
                 <textarea 
                   className="w-full h-full outline-none text-sm resize-none p-2"
                   value={editedEmail.body}
-                  onChange={(e) => handleInputChange('body', e.target.value)}
+                  onChange={(e) => {
+                    handleInputChange('body', e.target.value);
+                    if (formErrors.body) {
+                      setFormErrors(prev => ({ ...prev, body: '' }));
+                    }
+                  }}
                   placeholder="Write your email..."
                 />
+                {formErrors.body && (
+                  <div className="text-red-500 text-sm mt-2">{formErrors.body}</div>
+                )}
               </div>
             </div>
 
@@ -464,6 +708,141 @@ function MailboxView() {
             </div>
           ))}
         </div>
+      )}
+
+      {showComposeModal && (
+        <Draggable handle=".modal-handle" bounds="body">
+          <div className="fixed bottom-0 right-24 w-[600px] bg-white rounded-t-lg shadow-xl z-50 flex flex-col">
+            {/* Modal Header */}
+            <div className="modal-handle flex items-center justify-between px-4 py-2 bg-gray-100 rounded-t-lg cursor-move">
+              <h3 className="text-sm font-medium text-gray-700">New Message</h3>
+              <div className="flex items-center space-x-2">
+                <button 
+                  className="p-1.5 hover:bg-gray-200 rounded-full"
+                  title="Minimize"
+                  onClick={() => {
+                    handleMinimize({ ...newEmail, id: 'compose' });
+                    setShowComposeModal(false);
+                  }}
+                >
+                  <MinusIcon className="h-4 w-4 text-gray-600" />
+                </button>
+                <button 
+                  onClick={() => setShowComposeModal(false)}
+                  className="p-1.5 hover:bg-gray-200 rounded-full"
+                  title="Close"
+                >
+                  <XMarkIcon className="h-4 w-4 text-gray-600" />
+                </button>
+              </div>
+            </div>
+
+            {/* Email Form */}
+            <div className="flex-1 p-4">
+              {/* Recipients */}
+              <div className="flex flex-col border-b py-2">
+                <div className="flex items-center">
+                  <span className="text-sm text-gray-600 w-12">To</span>
+                  <input 
+                    type="email" 
+                    value={newEmail.to}
+                    onChange={(e) => {
+                      handleComposeInputChange('to', e.target.value);
+                      // Clear error when user starts typing
+                      if (formErrors.to) {
+                        setFormErrors(prev => ({ ...prev, to: '' }));
+                      }
+                    }}
+                    className={`flex-1 outline-none text-sm ${formErrors.to ? 'border-red-300' : ''}`}
+                    placeholder="recipient@example.com"
+                  />
+                </div>
+                {formErrors.to && (
+                  <span className="text-red-500 text-xs ml-12 mt-1">{formErrors.to}</span>
+                )}
+              </div>
+
+              {/* Subject */}
+              <div className="flex flex-col border-b py-2">
+                <div className="flex items-center">
+                  <input 
+                    type="text"
+                    value={newEmail.subject}
+                    onChange={(e) => {
+                      handleComposeInputChange('subject', e.target.value);
+                      if (formErrors.subject) {
+                        setFormErrors(prev => ({ ...prev, subject: '' }));
+                      }
+                    }}
+                    placeholder="Subject"
+                    className={`flex-1 outline-none text-sm ${formErrors.subject ? 'border-red-300' : ''}`}
+                  />
+                </div>
+                {formErrors.subject && (
+                  <span className="text-red-500 text-xs mt-1">{formErrors.subject}</span>
+                )}
+              </div>
+
+              {/* Body */}
+              <div className="mt-4 h-[300px] flex flex-col">
+                <textarea 
+                  className={`w-full h-full outline-none text-sm resize-none p-2 ${formErrors.body ? 'border-red-300' : ''}`}
+                  value={newEmail.body}
+                  onChange={(e) => {
+                    handleComposeInputChange('body', e.target.value);
+                    if (formErrors.body) {
+                      setFormErrors(prev => ({ ...prev, body: '' }));
+                    }
+                  }}
+                  placeholder="Write your email..."
+                />
+                {formErrors.body && (
+                  <span className="text-red-500 text-xs mt-1">{formErrors.body}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 border-t flex items-center justify-between">
+              <div className="flex space-x-2">
+                <button 
+                  className="bg-blue-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                  onClick={handleComposeEmail}
+                  disabled={loading}
+                >
+                  {loading ? 'Sending...' : 'Send'}
+                </button>
+                <button 
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors disabled:bg-gray-400"
+                  onClick={handleSaveAsDraft}
+                  disabled={loading}
+                >
+                  Save as Draft
+                </button>
+                <button 
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
+                  onClick={() => setShowComposeModal(false)}
+                >
+                  Discard
+                </button>
+              </div>
+              
+              {/* Formatting Tools */}
+              <div className="flex items-center space-x-2 text-gray-600">
+                <button className="p-2 hover:bg-gray-100 rounded" title="Formatting options">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <button className="p-2 hover:bg-gray-100 rounded" title="Attach files">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </Draggable>
       )}
     </div>
   )
