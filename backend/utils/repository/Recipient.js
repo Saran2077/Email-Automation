@@ -54,7 +54,7 @@ class RecipientRepository {
   async update(recipientId, updateData) {
     try {
       const recipient = await Recipient.findOneAndUpdate(
-        { recipientId },
+        { _id: String(recipientId) },
         { $set: updateData },
         { new: true, runValidators: true }
       );

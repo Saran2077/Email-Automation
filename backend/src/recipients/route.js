@@ -8,6 +8,7 @@ router.post('/create', recipientHandler.createRecipient);
 router.post('/bulk-create', recipientHandler.bulkCreateRecipients);
 router.get('/get/:id', recipientHandler.getRecipient);
 router.post('/update/:id', recipientHandler.updateRecipient);
+router.post('/update_stage/:id', recipientHandler.updateRecipientStage);
 router.delete('/delete/:id', recipientHandler.deleteRecipient);
 router.get('/list', recipientHandler.listRecipients);
 

@@ -7,7 +7,7 @@ export const sendMail = async (emailData) => {
 
     // Create a FormData instance
     const form = new FormData();
-    form.append('from', "Saran <betagamer580@gmail.com>");
+    form.append('from', "Saran <postmaster@sandboxed091eb00b0a47fa91a3c0113be24b39.mailgun.org>");
     form.append('to', "saranmuthuraj2004@gmail.com");
     form.append('subject', subject);
     form.append('html', body);
@@ -20,13 +20,11 @@ export const sendMail = async (emailData) => {
         method: 'POST',
         headers: {
             'Authorization': `Basic ${Buffer.from(`api:${process.env.API_KEY}`).toString('base64')}`,
-            // 'Content-Type': 'application/x-www-form-urlencoded', // Remove this line
         },
         body: form // Use FormData as the body
     });
-    console.log("RESPONSE", response)
+
     const responseData = await response.json();
-    console.log(4, responseData);
 
     return responseData.id.slice(1, -1);
 };

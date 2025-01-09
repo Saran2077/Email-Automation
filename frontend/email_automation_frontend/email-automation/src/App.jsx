@@ -5,6 +5,7 @@ import RecipientDashboard from './components/RecipientDashboard'
 import MailboxView from './components/MailboxView'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import EmailView from './components/EmailView'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
             <Route path="/customers" element={<CustomerScraper />} />
             <Route path="/recipients" element={<RecipientDashboard />} />
             <Route path="/mailbox" element={<MailboxView />} />
+            <Route path="/emailview" element={<EmailView />} />
             <Route path="/" element={<CustomerScraper />} />
           </Routes>
         </main>

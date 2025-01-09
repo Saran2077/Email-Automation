@@ -36,7 +36,7 @@ class DashboardService {
                 }
             
                 const data = await response.json();
-                console.log(data)
+
                 const totals = {};
                 events.forEach(event => {
                     if (data.stats && Array.isArray(data.stats)) {
@@ -53,9 +53,6 @@ class DashboardService {
                       totals[event] = 0;
                     }
                   });
-            
-                console.log('Total stats by event:');
-                console.log(JSON.stringify(totals, null, 2));
                     
                 return totals;
             } catch (error) {

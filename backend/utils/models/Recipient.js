@@ -8,7 +8,7 @@ const recipientSchema = new mongoose.Schema({
   },
   name: {
     type: String,
-    required: true,
+    // required: true,
   },
   email: {
     type: String,
@@ -46,8 +46,8 @@ const recipientSchema = new mongoose.Schema({
   
   stage: {
     type: String,
-    enum: ['contact', 'lead', 'deal', 'account'],
-    default: 'contact'
+    enum: ['Contact', 'Lead', 'Deal', 'Account'],
+    default: 'Contact'
   },
   metrics: {
     delivered: { type: Number, default: 0 },

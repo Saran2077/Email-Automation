@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { recipientAPI, dashboardAPI } from '../utils/apiLayer'
 import EmailStatsDashboard from './EmailStatsDashboard'
+import { Select } from 'antd'
 
 function RecipientDashboard() {
   const [recipients, setRecipients] = useState([])
@@ -8,6 +9,10 @@ function RecipientDashboard() {
   const [dashboardMetricsLoading, setDashboardMetricsLoading] = useState(true)
   const [dashboardMetrics, setDashboardMetrics] = useState(true)
   const [error, setError] = useState(null)
+
+  const stages = [
+    'Contact', 'Lead', 'Deal', 'Account'
+  ]
 
   useEffect(() => {
     fetchRecipients()
@@ -44,6 +49,20 @@ function RecipientDashboard() {
     }
   }
 
+  const handleStageChange = async (recipientData, newStage) => {
+    try {
+      await recipientAPI.updateStage(recipientData?._id, { stage: newStage, email: recipientData?.email })
+      setRecipients((prevRecipients) =>
+        prevRecipients.map((recipient) =>
+          recipient._id === recipientData?._id ? { ...recipient, stage: newStage } : recipient
+        )
+      )
+    } catch (err) {
+      console.error('Error updating stage:', err)
+      setError('Failed to update stage')
+    }
+  }
+
   if (loading) {
     return <div className="p-6">Loading...</div>
   }
@@ -73,9 +92,18 @@ function RecipientDashboard() {
                 <td className="px-6 py-4 whitespace-nowrap">{recipient.email}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{recipient.company}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                <Select 
+                  className="px-2 py-1 text-xs font-semibold rounded-full w-36"
+                  value={recipient?.stage} 
+                  onChange={(newStage) => handleStageChange(recipient, newStage)}
+                >
+                  {stages.map((stage) => (
+                    <Select.Option key={stage} value={stage}>{stage}</Select.Option>
+                  ))}
+                </Select>
+                  {/* <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                     {recipient.stage}
-                  </span>
+                  </span> */}
                 </td>
               </tr>
             ))}

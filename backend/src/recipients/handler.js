@@ -1,3 +1,4 @@
+import { getAllCustomFields, getContactsData, updateContact } from "../services/activeCampaign.js";
 import RecipientService from "./service.js";
 
 const recipientService = new RecipientService();
@@ -26,6 +27,34 @@ class RecipientHandler {
         try {
             const recipient = await recipientService.updateRecipient(req.params.id, req.body);
             res.status(200).json(recipient);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    async updateRecipientStage(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { email, stage } = req.body;
+            const recipient = await recipientService.updateRecipient(id, { stage });
+
+            res.status(200).json(recipient);
+
+            const customFields = await getAllCustomFields();
+
+            const field = customFields?.fields?.find(field => field.title === 'Stage')
+            if (field) {
+                const contact = await getContactsData({ email });
+                if (contact?.contacts?.length > 0) {
+                    const id = contact.contacts?.[0]?.id;
+                    await updateContact(id, { fieldValues:
+                        [{
+                            field: field?.id,
+                            value: stage
+                        }]
+                    });
+                }
+            }
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
