@@ -73,6 +73,27 @@ export const dashboardAPI = {
 };
 
 export const mailboxAPI = {
+
+    createDraft: async (draftData) => {
+        try {
+            const response = await fetch('http://localhost:3000/api/v1/mailbox/create_draft_email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(draftData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create draft');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error creating draft:', error);
+            throw error;
+        }
+    },
   
     listDrafts: async () => {
         try {

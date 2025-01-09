@@ -8,12 +8,12 @@ const emailSchema = new mongoose.Schema({
   },
   subject: {
     type: String,
-    required: true,
+    // required: true,
     trim: true
   },
   body: {
     type: String,
-    required: true
+    // required: true
   },
   from: {
     type: String,
