@@ -23,6 +23,15 @@ class RecipientHandler {
         }
     }
 
+    async getRecipientByEmail(req, res, next) {
+        try {
+            const recipient = await recipientService.getRecipientByEmail(req.params.email);
+            res.status(200).json(recipient);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
     async updateRecipient(req, res, next) {
         try {
             const recipient = await recipientService.updateRecipient(req.params.id, req.body);

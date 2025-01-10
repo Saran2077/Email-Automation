@@ -25,6 +25,14 @@ class RecipientRepository {
     }
   }
 
+  async getByEmail(email) {
+    try {
+      return await Recipient.findOne({ email });
+    } catch (error) {
+      throw new Error(`Error fetching recipient: ${error.message}`);
+    }
+  }
+
   // Get all recipients with optional filters
   async list(filters = {}, page = 1, limit = 10) {
     try {

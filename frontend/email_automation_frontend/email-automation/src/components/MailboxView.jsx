@@ -9,7 +9,8 @@ import {
   DocumentTextIcon,
   ArrowPathIcon,
   MinusIcon,
-  ArrowsPointingOutIcon
+  ArrowsPointingOutIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { mailboxAPI } from '../utils/apiLayer'
@@ -44,6 +45,8 @@ function MailboxView() {
     body: ''
   });
   const [showEmail, setShowEmail] = useState(false);
+  const [showAIPrompt, setShowAIPrompt] = useState(false);
+  const [aiPrompt, setAIPrompt] = useState('');
 
   // Fetch all emails on initial load
   useEffect(() => {
@@ -554,6 +557,49 @@ function MailboxView() {
     }
   };
 
+  const handleAIGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      toast.error('Please enter a prompt for the AI');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // TODO: Replace with actual API call to AI service
+      // const response = await mailboxAPI.generateEmailContent(aiPrompt);
+      
+      // Temporary mock response
+      const mockResponse = {
+        subject: 'AI Generated Subject',
+        body: `Generated content based on prompt: ${aiPrompt}`
+      };
+
+      // Update the email content
+      if (showComposeModal) {
+        setNewEmail(prev => ({
+          ...prev,
+          subject: mockResponse.subject,
+          body: mockResponse.body
+        }));
+      } else if (editedEmail) {
+        setEditedEmail(prev => ({
+          ...prev,
+          subject: mockResponse.subject,
+          body: mockResponse.body
+        }));
+      }
+
+      setShowAIPrompt(false);
+      setAIPrompt('');
+      toast.success('AI content generated successfully!');
+    } catch (error) {
+      console.error('Error generating AI content:', error);
+      toast.error('Failed to generate AI content');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-full bg-gray-50">
       {/* Left Sidebar */}
@@ -767,13 +813,20 @@ function MailboxView() {
               
               {/* Formatting Tools */}
               <div className="flex items-center space-x-2 text-gray-600">
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded" 
+                  title="AI Assistant"
+                  onClick={() => setShowAIPrompt(true)}
+                >
+                  <SparklesIcon className="h-4 w-4" />
+                </button>
                 <button className="p-2 hover:bg-gray-100 rounded" title="Formatting options">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
                 <button className="p-2 hover:bg-gray-100 rounded" title="Attach files">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
                 </button>
@@ -932,13 +985,20 @@ function MailboxView() {
               
               {/* Formatting Tools */}
               <div className="flex items-center space-x-2 text-gray-600">
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded" 
+                  title="AI Assistant"
+                  onClick={() => setShowAIPrompt(true)}
+                >
+                  <SparklesIcon className="h-4 w-4" />
+                </button>
                 <button className="p-2 hover:bg-gray-100 rounded" title="Formatting options">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
                 <button className="p-2 hover:bg-gray-100 rounded" title="Attach files">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
                 </button>
@@ -946,6 +1006,50 @@ function MailboxView() {
             </div>
           </div>
         </Draggable>
+      )}
+
+      {showAIPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-[500px] p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">AI Email Assistant</h3>
+              <button 
+                onClick={() => setShowAIPrompt(false)}
+                className="p-1 hover:bg-gray-100 rounded-full"
+              >
+                <XMarkIcon className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                What kind of email would you like to generate?
+              </label>
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAIPrompt(e.target.value)}
+                className="w-full h-32 p-3 border rounded-lg text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="E.g., Write a professional email to schedule a meeting with the marketing team to discuss Q4 strategy"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowAIPrompt(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAIGenerate}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+              >
+                {loading ? 'Generating...' : 'Generate'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

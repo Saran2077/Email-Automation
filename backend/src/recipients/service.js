@@ -9,6 +9,10 @@ class RecipientService {
         return await RecipientRepository.getById(id);
     }
 
+    async getRecipientByEmail(email) {
+        return await RecipientRepository.getByEmail(email);
+    }
+
     async updateRecipient(id, recipient) {
         return await RecipientRepository.updateById(id, recipient);
     }
