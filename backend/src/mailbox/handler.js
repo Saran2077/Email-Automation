@@ -126,16 +126,60 @@ class MailboxHandler {
         }
     }
 
-    async starEmail(email, recipient) {
+    async listStarEmail(req, res) {
+        try {
+            const response = await service.listStarEmail()
+            res.status(200).json({
+                success: true,
+                data: response
+            })
+        } catch (error) {
+            console.log("Handler Error===>", error)
+            res.status(500).json({
+                message: "Internal Server Error",
+                error: error.message
+            })
+        }
+    }
 
+    async starEmail(req, res) {
+        try {
+            const { id } = req.params;
+            console.log(id)
+            const star = await service.starEmail(id);
+
+            res.status(200).json({
+                success: true,
+                data: star
+            })
+        } catch (error) {
+            console.log("Handler Error===>", error)
+            res.status(500).json({
+                message: "Internal Server Error",
+                error: error.message
+            })
+        }
     }
 
     async deleteEmail(email, recipient) {
 
     }
 
-    async inboxEmail(email, recipient) {
+    async inboxEmail(req, res) {
+        try{
+            const response = await service.inboxEmail()
+            res.status(200).json({
+                success: true,
+                data: response
+            })
 
+        } catch(error){
+            console.log("Handler Error===>", error)
+            res.status(500).json({
+                message: "Internal Server Error",
+                error: error.message
+            })
+        }
     }
 
 }

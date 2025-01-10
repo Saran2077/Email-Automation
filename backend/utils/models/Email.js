@@ -27,10 +27,14 @@ const emailSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['draft', 'sent', 'delivered', 'opened', 'clicked', 'bounced'],
+    enum: ['draft', 'sent', 'delivered', 'opened', 'clicked', 'bounced', 'unopened'],
     default: 'draft'
   },
   isStarred: {
+    type: Boolean,
+    default: false
+  },
+  isReceived: {
     type: Boolean,
     default: false
   },

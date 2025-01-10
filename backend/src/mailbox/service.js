@@ -62,6 +62,61 @@ class MailboxService {
         }
     }
 
+    async listStarEmail(){
+        try {
+            // Use the repository's getRecipientEmails method with 'drafts' type
+            const starEmails = await emailRepository.list(
+                { isStarred: true }
+            );
+
+            return {
+                success: true,
+                data: {
+                    starred: starEmails.emails,
+                    totalItems: starEmails.total
+                }
+            };
+        } catch(error) {
+            throw error;
+        }
+    }
+
+    async starEmail(id){
+        try {
+            // Use the repository's getRecipientEmails method with 'drafts' type
+            console.log(1)
+            const starEmails = await emailRepository.toggleStarred(id);
+
+            return {
+                success: true,
+                data: {
+                    message: "Successfully starred the email",
+                }
+            };
+        } catch(error) {
+            throw error;
+        }
+    }
+
+    async inboxEmail(){
+        try {
+            // Use the repository's getRecipientEmails method with 'drafts' type
+            const inboxEmails = await emailRepository.list(
+                { isReceived: true }
+            );
+
+            return {
+                success: true,
+                data: {
+                    inbox: inboxEmails.emails,
+                    totalItems: inboxEmails.total
+                }
+            };
+        } catch(error) {
+            throw error;
+        }
+    }
+
     async updateDraftEmail(emailId, subject, body, to, from){
         try {
             let emailToSend;
@@ -168,17 +223,14 @@ class MailboxService {
         }
     }
 
-    async starEmail(email, recipient) {
-
-    }
 
     async deleteEmail(email, recipient) {
 
     }
 
-    async inboxEmail(email, recipient) {
+    // async inboxEmail(email, recipient) {
 
-    }
+    // }
 
 }
 

@@ -14,9 +14,11 @@ import {
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { mailboxAPI } from '../utils/apiLayer'
 import { toast } from 'react-toastify'
+import EmailView from './EmailView'
 
 function MailboxView() {
   const [selectedEmail, setSelectedEmail] = useState(null)
+  const [isUpdating, setIsUpdating] = useState(false)
   const [activeFolder, setActiveFolder] = useState('inbox')
   const [emails, setEmails] = useState({
     inbox: [],
@@ -41,6 +43,7 @@ function MailboxView() {
     subject: '',
     body: ''
   });
+  const [showEmail, setShowEmail] = useState(false);
 
   // Fetch all emails on initial load
   useEffect(() => {
@@ -50,7 +53,9 @@ function MailboxView() {
         // Fetch both draft and sent emails in parallel
         await Promise.all([
           fetchDraftEmails(),
-          fetchSentEmails()
+          fetchSentEmails(),
+          fetchInboxEmails(),
+          fetchStarEmails(),
         ]);
       } catch (error) {
         console.error('Error fetching initial data:', error);
@@ -112,6 +117,43 @@ function MailboxView() {
     }
   };
 
+  const fetchInboxEmails = async (showToast = false) => {
+    try {
+      setLoading(true);
+      const response = await mailboxAPI.inboxEmails();
+      
+      const inboxEmails = response.data.data.inbox.map(draft => ({
+        id: draft.emailId,
+        subject: draft.subject,
+        preview: draft.body,
+        to: draft.to.email,
+        from: draft.from,
+        date: new Date(draft.createdAt).toLocaleDateString(),
+        isDraft: true,
+        starred: draft.isStarred
+      }));
+
+      setEmails(prev => ({
+        ...prev,
+        inbox: inboxEmails
+      }));
+
+      // Only show toast if explicitly requested
+      if (showToast) {
+        toast.success('Draft saved successfully!');
+      }
+
+    } catch (err) {
+      setError('Failed to fetch draft emails');
+      if (showToast) {
+        toast.error('Failed to fetch draft emails');
+      }
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchSentEmails = async (showToast = false) => {
     try {
       setLoading(true);
@@ -149,6 +191,43 @@ function MailboxView() {
     }
   };
 
+  const fetchStarEmails = async (showToast = false) => {
+    try {
+      setLoading(true);
+      const response = await mailboxAPI.listStarredEmails();
+      
+      const sentEmails = response.data.data.starred.map(sent => ({
+        id: sent.emailId,
+        subject: sent.subject,
+        preview: sent.body,
+        to: sent.to.email,
+        from: sent.from,
+        date: new Date(sent.createdAt).toLocaleDateString(),
+        isSent: true,
+        starred: sent.isStarred
+      }));
+
+      setEmails(prev => ({
+        ...prev,
+        starred: sentEmails
+      }));
+
+      // Only show toast if explicitly requested
+      if (showToast) {
+        toast.success('Email sent successfully!');
+      }
+
+    } catch (err) {
+      setError('Failed to fetch sent emails');
+      if (showToast) {
+        toast.error('Failed to fetch sent emails');
+      }
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const folders = [
     { name: 'Inbox', icon: InboxIcon, id: 'inbox', count: emails.inbox.length },
     { name: 'Starred', icon: StarIconSolid, id: 'starred', count: emails.starred.length },
@@ -157,9 +236,27 @@ function MailboxView() {
     { name: 'Trash', icon: TrashIcon, id: 'trash', count: emails.trash.length },
   ]
 
-  const toggleStar = (emailId) => {
-    // Implementation for toggling star
-    console.log('Toggle star for email:', emailId)
+  const toggleStar = async (email) => {
+    setIsUpdating(true);
+    try {
+      const { id, starred } = email;
+      const response = await mailboxAPI.updateStarEmails(id)
+
+      if (response?.success) {
+        // await fetchInboxEmails();
+        setEmails((prev) => ({
+          ...prev,
+          [activeFolder]: prev[activeFolder].map(e => e.id === id ? {...e, starred:!starred } : e)
+        }))
+
+        console.log("Emails: ", emails)
+        await fetchStarEmails();
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsUpdating(false);
+    }
   }
 
   const handleMinimize = (email) => {
@@ -290,7 +387,7 @@ function MailboxView() {
         subject: email.subject,
         body: email.body,
         to: email.to,
-        from: "betagamer580@gmail.com"
+        from: "postmaster@sandboxed091eb00b0a47fa91a3c0113be24b39.mailgun.org"
       };
 
       const response = await mailboxAPI.sendEmail(emailData);
@@ -299,6 +396,11 @@ function MailboxView() {
         toast.success('Email sent successfully!');
         setSelectedEmail(null);
         await fetchSentEmails();
+        setEmails((prev) => ({
+          ...prev,
+          [activeFolder]: prev[activeFolder].filter(e => e.id !== email?.id)
+        }))
+        
       } else {
         throw new Error('Failed to send email');
       }
@@ -357,7 +459,7 @@ function MailboxView() {
         subject: newEmail.subject,
         body: newEmail.body,
         to: newEmail.to,
-        from: "betagamer580@gmail.com"
+        from: "postmaster@sandboxed091eb00b0a47fa91a3c0113be24b39.mailgun.org"
       };
 
       const response = await mailboxAPI.sendEmail(emailData);
@@ -428,7 +530,7 @@ function MailboxView() {
         subject: newEmail.subject,
         body: newEmail.body,
         to: newEmail.to,
-        from: "betagamer580@gmail.com"
+        from: "postmaster@sandboxed091eb00b0a47fa91a3c0113be24b39.mailgun.org"
       };
 
       const response = await mailboxAPI.createDraft(draftData);
@@ -526,9 +628,10 @@ function MailboxView() {
                 } hover:bg-gray-50 transition-colors`}
               >
                 <button
+                  disabled={isUpdating}
                   onClick={(e) => {
                     e.stopPropagation()
-                    toggleStar(email.id)
+                    toggleStar(email)
                   }}
                   className="mr-4 flex-shrink-0"
                 >

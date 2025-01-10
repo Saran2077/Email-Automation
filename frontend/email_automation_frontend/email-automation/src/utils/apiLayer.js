@@ -37,6 +37,15 @@ export const recipientAPI = {
     }
   },
 
+  updateStage: async (id, data) => {
+    try {
+      const response = await api.post(`/v1/recipients/update_stage/${id}`, data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   bulkCreate: async (data) => {
     try {
       const response = await api.post('/v1/recipients/bulk-create', {
@@ -128,6 +137,19 @@ export const mailboxAPI = {
         }
     },
 
+    inboxEmails: async () => {
+      try {
+          const response = await fetch('http://localhost:3000/api/v1/mailbox/list_inbox_email');
+          if (!response.ok) {
+              throw new Error('Failed to fetch sent emails');
+          }
+          return await response.json();
+      } catch (error) {
+          console.error('Error fetching sent emails:', error);
+          throw error;
+      }
+  },
+
     updateDraft: async (draftData) => {
         try {
             const response = await fetch('http://localhost:3000/api/v1/mailbox/update_draft_email', {
@@ -168,5 +190,36 @@ export const mailboxAPI = {
             console.error('Error sending email:', error);
             throw error;
         }
+    },
+
+    listStarredEmails: async() => {
+      try {
+          const response = await fetch('http://localhost:3000/api/v1/mailbox/list_starred_email');
+          if (!response.ok) {
+              throw new Error('Failed to fetch starred emails');
+          }
+          return await response.json();
+      } catch (error) {
+          console.error('Error fetching starred emails:', error);
+          throw error;
+      }
+    },
+
+    updateStarEmails: async(emailId) => {
+      try {
+          const response = await fetch(`http://localhost:3000/api/v1/mailbox/star_email/${emailId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+          });
+          if (!response.ok) {
+              throw new Error('Failed to update starred emails');
+          }
+          return await response.json();
+      } catch (error) {
+          console.error('Error update star emails:', error);
+          throw error;
+      }
     }
 };
