@@ -258,4 +258,34 @@ async function updateContact(id, data) {
     }
 }
 
-export { getContactData, getContactsData, getOrganizationData, getCustomFieldData, createAccount, createContact, createContactAssociation, getAllLists, bulkImportContacts, getAllCustomFields, updateContact };
+async function addContactTags(id, tagId) {
+    const url = `${process.env.ACTIVE_CAMPAIGN_URL}/contacts/${id}`;
+    try {
+        const headers = {
+            'Api-Token': process.env.ACTIVE_CAMPAIGN_API_KEY,
+            'Content-Type': 'application/json'
+        };
+        const response = await fetch(`${process.env.ACTIVE_CAMPAIGN_URL}/contactTags`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                contactTag: {
+                    contact: id,
+                    tag: tagId
+                }
+            })
+        });
+    
+
+        if (!response.ok) {
+            const errorResponse = await response.json();
+            throw new Error(`Error in fetching custom fields: ${response.statusText} , Details: ${JSON.stringify(errorResponse)}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error(e);
+        return null;
+    }
+}
+
+export { getContactData, getContactsData, getOrganizationData, getCustomFieldData, createAccount, createContact, createContactAssociation, getAllLists, bulkImportContacts, getAllCustomFields, updateContact, addContactTags };

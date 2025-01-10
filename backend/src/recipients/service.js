@@ -10,7 +10,7 @@ class RecipientService {
     }
 
     async updateRecipient(id, recipient) {
-        return await RecipientRepository.update(id, recipient);
+        return await RecipientRepository.updateById(id, recipient);
     }
 
     async deleteRecipient(id) {

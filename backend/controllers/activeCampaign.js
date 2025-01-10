@@ -3,9 +3,12 @@ import { getContactData, getOrganizationData, getCustomFieldData, getAllLists, c
 import { generateEmailsFromJsonList } from "../src/services/email_generation.js";
 import { sendMail } from "../utils/sendMail.js";
 import MailboxService from "../src/mailbox/service.js";
+import EmailRepository from "../utils/repository/Email.js";
+import Recipient from "../utils/repository/Recipient.js";
 
 
 const mailboxService = new MailboxService()
+const recipientRepository = Recipient
 
 async function handleSendMail(request, response) {
   try {
@@ -123,6 +126,18 @@ async function handleSendMail(request, response) {
   }
 }
 
+async function handleUpdateStage(request, response) {
+  try {
+    const { email, fields } = request.body?.contact;
+
+    console.log(email, fields, request.body);
+
+    if (!email && !fields?.stage) return;
+    recipientRepository.update( { email }, { stage: fields.stage });
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 async function handleGetLists(req, res) {
   try {
@@ -165,7 +180,7 @@ async function handleContactBulkUpload(req, res) {
       for (const employee of company.Employee_List || []) {
         const primaryEmail = `user${Math.floor(Math.random() * 10000)}@gmail.com` || employee.emailInfo?.primaryEmail || '';
         console.log('Employee Info', {
-            email: primaryEmail,
+            email: employee.emailInfo?.primaryEmail,
             firstName: employee.name?.replace(" ", "") || '',
             lastName: "",
             fieldValues: [
@@ -225,4 +240,4 @@ async function handleContactBulkUpload(req, res) {
   }
 }
 
-export { handleSendMail, handleAddContact, handleGetLists, handleContactBulkUpload }
+export { handleSendMail, handleAddContact, handleGetLists, handleContactBulkUpload, handleUpdateStage }
