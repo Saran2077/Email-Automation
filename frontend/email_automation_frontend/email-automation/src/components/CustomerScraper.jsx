@@ -4,7 +4,7 @@ import { toast } from 'react-toastify'
 import CreateCampaignModal from './CreateCampaignModal'
 import { scrapAPI, recipientAPI } from '../utils/apiLayer'
 import FilterModel from './FilterModel'
-import { Pagination } from 'antd'
+import { Descriptions, Pagination } from 'antd'
 
 function CustomerScraper() {
   const [customers, setCustomers] = useState({
@@ -106,9 +106,13 @@ function CustomerScraper() {
       throw new Error('Invalid company or employee data')
     }
 
+    console.log("Bulk creaet", employee, company)
+
+
     return {
       name: employee.name || '',
       email: employee.email || `user${Math.floor(Math.random() * 10000)}@gmail.com`,
+      shortBio: employee?.shortBio,
       company: company.Name || '',
       country: company.Country || '',
       city: company.City || '',
@@ -116,6 +120,8 @@ function CustomerScraper() {
       designation: employee.designation || '',
       linkedinHandle: employee.profileLinks?.linkedinHandle || '',
       companyDomain: company.Domain || '',
+      Description: company.Description || '',
+      industry: company.Primary_Industry || '',
       stage: 'contact' // Default stage, will be overridden by modal selection
     }
   }
@@ -137,7 +143,8 @@ function CustomerScraper() {
           name: customer.name,
           email: customer.email,
           designation: customer.designation,
-          profileLinks: customer.profileLinks
+          profileLinks: customer.profileLinks,
+          shortBio: customer.shortBio
         })
         payload.stage = selectedStage
         return payload
