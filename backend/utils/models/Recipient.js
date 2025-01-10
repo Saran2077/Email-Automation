@@ -43,7 +43,18 @@ const recipientSchema = new mongoose.Schema({
     type: String,
     
   },
-  
+  shortBio: {
+    type: String,
+    
+  },
+  industry: {
+    type: String,
+    
+  },
+  Description: {
+    type: String,
+    
+  },
   stage: {
     type: String,
     enum: ['Contact', 'Lead', 'Deal', 'Account'],

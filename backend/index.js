@@ -9,6 +9,7 @@ import recipientRoutes from "./src/recipients/route.js";
 import mailboxRoutes from "./src/mailbox/route.js";
 import dashboardRoutes from "./src/dashboard/route.js";
 import authRoutes from "./src/auth/route.js";
+import emailGenerationRoutes from "./src/email_generation/route.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use('/api/v1/recipients', recipientRoutes)
 app.use('/api/v1/mailbox', mailboxRoutes)
 app.use('/api/v1/dashboard', dashboardRoutes)
 app.use('/api/v1/auth', authRoutes)
+app.use('/api/v1/email_generation', emailGenerationRoutes)
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);

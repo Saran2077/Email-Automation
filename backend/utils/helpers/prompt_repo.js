@@ -5,13 +5,12 @@ const PROMPT_TEMPLATES = (stage, baseContext) => {
       ${baseContext}
 
       SPECIFIC GUIDELINES FOR CONTACT STAGE:
-      1. Start with a compelling hook related to ${companyData?.industry || 'their industry'} trends or challenges
+      1. Start with a compelling hook related to their industry trends or challenges
       2. Briefly introduce yourself and establish credibility
-      3. Show you've done research about ${companyData?.companyName}
+      3. Show you've done research about that company
       4. Focus on their potential pain points based on their industry/role
-      5. Include 1-2 relevant customer success stories or metrics
-      6. End with a soft call-to-action (request for 15-min chat)
-      7. Keep the email under 200 words
+      5. End with a soft call-to-action (request for 15-min chat)
+      6. Keep the email under 200 words
       
       TONE GUIDELINES:
       - Professional yet conversational
@@ -87,7 +86,7 @@ const PROMPT_TEMPLATES = (stage, baseContext) => {
     `
   };
 
-export const getPromptForStage = (stage, target_data) => {
+export const getPromptForStage = ({stage, target_data, aiPrompt}) => {
     const our_data = {
         name: "Saran M",
         designation: "Chief of Communications",
@@ -102,15 +101,19 @@ export const getPromptForStage = (stage, target_data) => {
 
             In a world where digital transformation is crucial, we stand as your strategic partner, equipped with the expertise to turn technological complexity into business advantage. Our solutions don't just solve today's challenges – they build the foundation for tomorrow's success.
         `,
-        productDescription: "Vanij is an enterprise-grade AI orchestration platform featuring a robust 4-layer architecture for building custom LLMs, agents, and copilots. It enables rapid development of AI applications with powerful LLM integrations, customizable workflows, and flexible cloud deployment options. Adya complements this by providing ONDC integration solutions and specialized agents for commerce operations. Together, they deliver scalable, secure AI solutions for businesses seeking digital transformation, with Vanij handling core AI capabilities and Adya focusing on network integration and commerce applications.",
-        website: "https://adya.ai/"
+        productDescription: `Vanij is an enterprise-grade AI orchestration platform featuring a robust 4-layer architecture for building custom LLMs, agents, and copilots. 
+        It enables rapid development of AI applications with powerful LLM integrations, customizable workflows, and flexible cloud deployment options. 
+        Adya complements this by providing ONDC integration solutions and specialized agents for commerce operations. 
+        Together, they deliver scalable, secure AI solutions for businesses seeking digital transformation, with Vanij handling core AI capabilities and Adya focusing on network integration and commerce applications.`,
+        
+        companyWebsite: "https://adya.ai/"
     }
 
     const baseContext = `
         COMPANY CONTEXT:
         - Our Company: ${our_data?.companyName}
         - Our Value Proposition: ${our_data?.companyDescription}
-        - Our Website: ${our_data?.website}
+        - Our Website: ${our_data?.companyWebsite}
         
         TARGET CONTEXT:
         - Company: ${target_data?.companyName}
@@ -126,19 +129,24 @@ export const getPromptForStage = (stage, target_data) => {
         - Name: ${our_data?.name}
         - Role: ${our_data?.designation}
         - Company Name: ${our_data?.companyName}
-  `;
+    `;
+
+    const defaultPrompt = `
+        General Requirements:
+            1. Include our website link naturally: adya.ai
+            2. Add appropriate spacing and paragraphs
+            3. Include a professional email signature
+            4. Ensure mobile-friendly formatting
+    `
 
     const prompt = `
         ${PROMPT_TEMPLATES(stage.toUpperCase(), baseContext)}
 
+        ${aiPrompt || defaultPrompt}
+
         General Requirements:
         1. Use clean, professional HTML formatting
-        2. Include our website link naturally: ${our_data?.website}
-        3. Add appropriate spacing and paragraphs
-        4. Include a professional email signature
-        5. Ensure mobile-friendly formatting
-
-        Return only a valid JSON string with format:
+        2. Return only a valid JSON string with format:
         {
         "subject": "Compelling subject line",
         "body": "HTML formatted email body"
