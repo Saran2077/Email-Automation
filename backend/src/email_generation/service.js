@@ -46,8 +46,8 @@ class EmailGenerationService {
             const payload = {
                 stage: recipient.stage,
                 target_data: {
-                    companyName: recipient.companyName,
-                    companyDescription: recipient.companyDescription,
+                    company: recipient.company,
+                    companyDescription: recipient.Description,
                     industry: recipient.industry,
                     name: recipient.name,
                     designation: recipient.designation,

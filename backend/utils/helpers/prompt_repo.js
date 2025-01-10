@@ -116,7 +116,7 @@ export const getPromptForStage = ({stage, target_data, aiPrompt}) => {
         - Our Website: ${our_data?.companyWebsite}
         
         TARGET CONTEXT:
-        - Company: ${target_data?.companyName}
+        - Company: ${target_data?.company}
         - Company Profile: ${target_data?.companyDescription}
         - Industry: ${target_data?.industry || ''}
         
@@ -132,7 +132,6 @@ export const getPromptForStage = ({stage, target_data, aiPrompt}) => {
     `;
 
     const defaultPrompt = `
-        General Requirements:
             1. Include our website link naturally: adya.ai
             2. Add appropriate spacing and paragraphs
             3. Include a professional email signature
@@ -141,16 +140,19 @@ export const getPromptForStage = ({stage, target_data, aiPrompt}) => {
 
     const prompt = `
         ${PROMPT_TEMPLATES(stage.toUpperCase(), baseContext)}
-
+    
+        User's Prompt:
         ${aiPrompt || defaultPrompt}
 
         General Requirements:
-        1. Use clean, professional HTML formatting
+        1. Make it sound natural and professional. Format the email body in valid HTML. 
         2. Return only a valid JSON string with format:
         {
         "subject": "Compelling subject line",
         "body": "HTML formatted email body"
         }
+        3. Keep it short and concise.
+        4. Use the company name and website in the email naturally.
     `
     if (!prompt) {
         throw new Error(`Invalid stage: ${stage}. Available stages are: contact, lead, deal, account`);

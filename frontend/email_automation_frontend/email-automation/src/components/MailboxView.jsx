@@ -565,36 +565,44 @@ function MailboxView() {
 
     try {
       setLoading(true);
-      // TODO: Replace with actual API call to AI service
-      // const response = await mailboxAPI.generateEmailContent(aiPrompt);
       
-      // Temporary mock response
-      const mockResponse = {
-        subject: 'AI Generated Subject',
-        body: `Generated content based on prompt: ${aiPrompt}`
+      // Prepare the payload
+      const payload = {
+        toEmail: showComposeModal ? newEmail.to : editedEmail.to,
+        aiPrompt: aiPrompt
       };
 
-      // Update the email content
-      if (showComposeModal) {
-        setNewEmail(prev => ({
-          ...prev,
-          subject: mockResponse.subject,
-          body: mockResponse.body
-        }));
-      } else if (editedEmail) {
-        setEditedEmail(prev => ({
-          ...prev,
-          subject: mockResponse.subject,
-          body: mockResponse.body
-        }));
-      }
+      // Make the API call
+      const response = await mailboxAPI.generateEmailWithAI(payload);
+      
+      if (response?.data?.data) {
+        // Parse the JSON string from the response
+        const generatedEmail = JSON.parse(response.data.data);
 
-      setShowAIPrompt(false);
-      setAIPrompt('');
-      toast.success('AI content generated successfully!');
+        // Update the email content based on whether we're in compose or edit mode
+        if (showComposeModal) {
+          setNewEmail(prev => ({
+            ...prev,
+            subject: generatedEmail.subject,
+            body: generatedEmail.body
+          }));
+        } else if (editedEmail) {
+          setEditedEmail(prev => ({
+            ...prev,
+            subject: generatedEmail.subject,
+            body: generatedEmail.body
+          }));
+        }
+
+        setShowAIPrompt(false);
+        setAIPrompt('');
+        toast.success('Email content generated successfully!');
+      } else {
+        throw new Error('Invalid response format from AI service');
+      }
     } catch (error) {
       console.error('Error generating AI content:', error);
-      toast.error('Failed to generate AI content');
+      toast.error('Failed to generate AI content. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -1023,13 +1031,16 @@ function MailboxView() {
             
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                What kind of email would you like to generate?
+                Let AI craft your perfect email
               </label>
+              <p className="text-sm text-gray-500 mb-3">
+                Describe your email's purpose, and our AI will generate professional content tailored to your needs.
+              </p>
               <textarea
                 value={aiPrompt}
                 onChange={(e) => setAIPrompt(e.target.value)}
                 className="w-full h-32 p-3 border rounded-lg text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="E.g., Write a professional email to schedule a meeting with the marketing team to discuss Q4 strategy"
+                placeholder="Example: Generate a follow-up email to introduce our product to a potential client who showed interest at the recent tech conference"
               />
             </div>
 

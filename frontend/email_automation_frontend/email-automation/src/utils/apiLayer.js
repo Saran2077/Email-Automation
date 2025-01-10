@@ -221,5 +221,18 @@ export const mailboxAPI = {
           console.error('Error update star emails:', error);
           throw error;
       }
-    }
+    },
+
+    generateEmailWithAI: async (payload) => {
+      try {
+        const response = await axios.post(
+          'http://localhost:3000/api/v1/email_generation/generate_email_with_ai',
+          payload
+        );
+        return response;
+      } catch (error) {
+        console.error('Error in generateEmailWithAI:', error);
+        throw error;
+      }
+    },
 };
