@@ -8,6 +8,7 @@ import { connectToMongoDB } from './db/dbConnect.js';
 import recipientRoutes from "./src/recipients/route.js";
 import mailboxRoutes from "./src/mailbox/route.js";
 import dashboardRoutes from "./src/dashboard/route.js";
+import authRoutes from "./src/auth/route.js";
 
 dotenv.config();
 
@@ -31,7 +32,7 @@ app.use('/api/scrap', scrapRoutes)
 app.use('/api/v1/recipients', recipientRoutes)
 app.use('/api/v1/mailbox', mailboxRoutes)
 app.use('/api/v1/dashboard', dashboardRoutes)
-
+app.use('/api/v1/auth', authRoutes)
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
