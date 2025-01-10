@@ -46,10 +46,10 @@ class EmailRepository {
   }
 
   // Update an email
-  async update(emailId, updateData) {
+  async update(query, updateData) {
     try {
       const email = await Email.findOneAndUpdate(
-        { emailId },
+        { ...query },
         { $set: updateData },
         { 
           new: true,

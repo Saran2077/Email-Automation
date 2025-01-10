@@ -51,7 +51,7 @@ class RecipientRepository {
   }
 
   // Update a recipient
-  async update(recipientId, updateData) {
+  async updateById(recipientId, updateData) {
     try {
       const recipient = await Recipient.findOneAndUpdate(
         { _id: String(recipientId) },
@@ -66,6 +66,15 @@ class RecipientRepository {
       return recipient;
     } catch (error) {
       throw new Error(`Error updating recipient: ${error.message}`);
+    }
+  }
+
+  async update(query, updateData) {
+    try {
+      const recipients = await Recipient.findOneAndUpdate(query, updateData);
+      return recipients;
+    } catch (error) {
+      throw new Error(`Error updating recipients: ${error.message}`);
     }
   }
 

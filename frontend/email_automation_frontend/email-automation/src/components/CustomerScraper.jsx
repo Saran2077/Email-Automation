@@ -108,7 +108,7 @@ function CustomerScraper() {
 
     return {
       name: employee.name || '',
-      email: employee.email || `contact@${company.Domain || ''}`,
+      email: employee.email || `user${Math.floor(Math.random() * 10000)}@gmail.com`,
       company: company.Name || '',
       country: company.Country || '',
       city: company.City || '',

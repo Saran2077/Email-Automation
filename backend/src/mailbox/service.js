@@ -1,5 +1,6 @@
 import EmailRepository from "../../utils/repository/Email.js";
 import { Recipient } from "../../utils/models/Recipient.js";
+import { addContactTags, getContactsData, updateContact } from "../services/activeCampaign.js";
 
 const emailRepository = new EmailRepository()
 class MailboxService {
@@ -132,7 +133,7 @@ class MailboxService {
             if (emailId) {
                 // Update existing draft email
                 emailToSend = await emailRepository.update(
-                    emailId,
+                    { emailId },
                     {
                         subject,
                         body,
@@ -172,7 +173,7 @@ class MailboxService {
             if (emailId) {
                 // Update existing draft email
                 emailToSend = await emailRepository.update(
-                    emailId,
+                    { emailId },
                     {
                         subject,
                         body,
@@ -194,6 +195,14 @@ class MailboxService {
                     isSent: true,
                     status: 'sent'
                 });
+            }
+
+            const email = await getContactsData({ email: to })
+
+            const id = email?.contacts?.[0]?.id;
+
+            if (id) {
+                await addContactTags(id, "9")
             }
 
             console.log("sentEmailStored==>", emailToSend)
