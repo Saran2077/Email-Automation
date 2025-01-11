@@ -1,162 +1,138 @@
-const PROMPT_TEMPLATES = (stage, baseContext) => {
-    if (stage === 'CONTACT') return `
-      As an expert email copywriter, craft an initial outreach email for a first-time contact.
+// Template constants
+const STAGE_TEMPLATES = {
+    CONTACT: {
+        role: "As an expert email copywriter, craft an initial outreach email for a first-time contact.",
+        guidelines: [
+            "Start with a compelling hook related to their industry trends or challenges",
+            "Briefly introduce yourself and establish credibility",
+            "Show you've done research about that company",
+            "Focus on their potential pain points based on their industry/role",
+            "End with a soft call-to-action (request for 15-min chat)",
+            "Keep the email under 200 words"
+        ],
+        tone: [
+            "Professional yet conversational",
+            "Show genuine interest in their business",
+            "Avoid aggressive sales language",
+            "Focus on value-addition rather than selling"
+        ]
+    }
+};
 
-      ${baseContext}
+// Context structure definition
+const CONTEXT_STRUCTURE = {
+    COMPANY: ['companyName', 'companyDescription', 'companyWebsite', 'productAndServices'],
+    TARGET: ['companyName', 'companyDescription', 'industry'],
+    RECIPIENT: ['name', 'designation', 'shortBio'],
+    SENDER: ['name', 'designation', 'companyName']
+};
 
-      SPECIFIC GUIDELINES FOR CONTACT STAGE:
-      1. Start with a compelling hook related to their industry trends or challenges
-      2. Briefly introduce yourself and establish credibility
-      3. Show you've done research about that company
-      4. Focus on their potential pain points based on their industry/role
-      5. End with a soft call-to-action (request for 15-min chat)
-      6. Keep the email under 200 words
-      
-      TONE GUIDELINES:
-      - Professional yet conversational
-      - Show genuine interest in their business
-      - Avoid aggressive sales language
-      - Focus on value-addition rather than selling
-    `
+const formatContextSection = (contextData, section) => {
+    if (!contextData) return '';
+    
+    // Get all keys from the context data, not just the predefined ones
+    const lines = Object.entries(contextData)
+        .map(([key, value]) => `- ${key}: ${value || ''}`)
+        .join('\n');
+    
+    return lines ? `${section} CONTEXT:\n${lines}\n` : '';
+};
 
-    if (stage === 'LEAD') return `
-      As an expert email copywriter, craft a nurturing email for a qualified lead who has shown interest.
+// Update the context structure to be more flexible
+const CONTEXT_MAPPING = {
+    senderCompanyContext: 'COMPANY',
+    targetCompanyContext: 'TARGET',
+    recipientContext: 'RECIPIENT',
+    senderContext: 'SENDER'
+};
 
-      ${baseContext}
+const buildBaseContext = (contextData) => {
+    return Object.entries(CONTEXT_MAPPING)
+        .map(([contextKey, section]) => {
+            const sectionData = contextData[contextKey];
+            return formatContextSection(sectionData, section);
+        })
+        .filter(Boolean)
+        .join('\n');
+};
 
-      SPECIFIC GUIDELINES FOR LEAD STAGE:
-      1. Reference previous interactions or touchpoints
-      2. Address specific pain points discussed
-      3. Share relevant case studies or success metrics
-      4. Provide valuable insights or resources
-      5. Include social proof (testimonials, reviews)
-      6. Mention any current promotions or special offers
-      7. Add urgency without being pushy
-      8. Suggest next steps (demo, consultation, trial)
-      
-      TONE GUIDELINES:
-      - Confident and knowledgeable
-      - Solution-focused
-      - Build trust through expertise
-      - Maintain professional warmth
-    `
+const mergeCustomContext = (baseContext, customContext) => {
+    if (!customContext) return baseContext;
 
-    if (stage === 'DEAL') return `
-      As an expert email copywriter, craft a strategic email for an opportunity in active negotiation.
+    const mergedContext = { ...baseContext };
+    
+    Object.entries(customContext).forEach(([sectionKey, sectionData]) => {
+        if (typeof sectionData === 'object' && sectionData !== null) {
+            // Create section if it doesn't exist
+            if (!mergedContext[sectionKey]) {
+                mergedContext[sectionKey] = {};
+            }
+            // Deep merge the section data
+            mergedContext[sectionKey] = {
+                ...mergedContext[sectionKey],
+                ...sectionData
+            };
+        }
+    });
+    
+    return mergedContext;
+};
 
-      ${baseContext}
-
-      SPECIFIC GUIDELINES FOR DEAL STAGE:
-      1. Reference specific discussions and agreed points
-      2. Address any pending concerns or objections
-      3. Highlight key differentiators from competitors
-      4. Emphasize ROI and value proposition
-      5. Include implementation timeline if relevant
-      6. Mention available support and resources
-      7. Clear next steps for closing the deal
-      8. Add any time-sensitive incentives
-      
-      TONE GUIDELINES:
-      - Direct and clear
-      - Focus on partnership
-      - Emphasize mutual benefits
-      - Professional but familiar
-    `
-
-    if(stage === 'ACCOUNT') return `
-      As an expert email copywriter, craft a relationship-building email for an existing account.
-
-      ${baseContext}
-
-      SPECIFIC GUIDELINES FOR ACCOUNT STAGE:
-      1. Reference current implementation/usage
-      2. Share relevant updates or new features
-      3. Suggest optimization opportunities
-      4. Include success metrics from their account
-      5. Mention expansion opportunities
-      6. Offer additional training or resources
-      7. Request feedback or testimonials
-      8. Schedule regular check-ins
-      
-      TONE GUIDELINES:
-      - Friendly and collaborative
-      - Focus on long-term partnership
-      - Proactive and helpful
-      - Appreciation for their business
-    `
-  };
-
-export const getPromptForStage = ({stage, target_data, aiPrompt}) => {
-    const our_data = {
-        name: "Saran M",
-        designation: "Chief of Communications",
-        companyName: "Adya",
-        companyDescription: `
-            We are pioneers in technological innovation, seamlessly blending artificial intelligence with open networks to revolutionize business transformation. At Adya, we don't just implement technology – we architect solutions that define the future of business.
-            ##Our Distinction:
-            We deliver cutting-edge solutions built on two core pillars:
-
-                1. Composable Solutions: Flexible, modular designs that adapt to your evolving needs
-                2. Intelligent Integration: Seamless fusion of AI capabilities with existing infrastructure
-
-            In a world where digital transformation is crucial, we stand as your strategic partner, equipped with the expertise to turn technological complexity into business advantage. Our solutions don't just solve today's challenges – they build the foundation for tomorrow's success.
-        `,
-        productDescription: `Vanij is an enterprise-grade AI orchestration platform featuring a robust 4-layer architecture for building custom LLMs, agents, and copilots. 
-        It enables rapid development of AI applications with powerful LLM integrations, customizable workflows, and flexible cloud deployment options. 
-        Adya complements this by providing ONDC integration solutions and specialized agents for commerce operations. 
-        Together, they deliver scalable, secure AI solutions for businesses seeking digital transformation, with Vanij handling core AI capabilities and Adya focusing on network integration and commerce applications.`,
-        
-        companyWebsite: "https://adya.ai/"
+const buildStageTemplate = (stage) => {
+    const template = STAGE_TEMPLATES[stage.toUpperCase()];
+    if (!template) {
+        throw new Error(`Invalid stage: ${stage}. Available stages are: ${Object.keys(STAGE_TEMPLATES).join(', ')}`);
     }
 
-    const baseContext = `
-        COMPANY CONTEXT:
-        - Our Company: ${our_data?.companyName}
-        - Our Value Proposition: ${our_data?.companyDescription}
-        - Our Website: ${our_data?.companyWebsite}
+    return `
+        ${template.role}
+
+        SPECIFIC GUIDELINES FOR ${stage.toUpperCase()} STAGE:
+        ${template.guidelines.map((g, i) => `${i + 1}. ${g}`).join('\n')}
         
-        TARGET CONTEXT:
-        - Company: ${target_data?.company}
-        - Company Profile: ${target_data?.companyDescription}
-        - Industry: ${target_data?.industry || ''}
-        
-        RECIPIENT CONTEXT:
-        - Name: ${target_data?.name}
-        - Role: ${target_data?.designation}
-        - Background: ${target_data?.shortBio || ''}
-        
-        SENDER DETAILS:
-        - Name: ${our_data?.name}
-        - Role: ${our_data?.designation}
-        - Company Name: ${our_data?.companyName}
+        TONE GUIDELINES:
+        ${template.tone.map(t => `- ${t}`).join('\n')}
+    `;
+};
+
+export const getPromptForStage = ({ stage, contextData, customContext, aiPrompt = '', customInstructions = '' }) => {
+    // Deep clone the contextData to avoid mutations
+    let finalContext = JSON.parse(JSON.stringify(contextData));
+    
+    if (customContext) {
+        finalContext = mergeCustomContext(finalContext, customContext);
+    }
+
+    const baseContext = buildBaseContext(finalContext);
+    const stageTemplate = buildStageTemplate(stage);
+    const defaultPrompt = `
+        1. Include our website link naturally: adya.ai
+        2. Add appropriate spacing and paragraphs
+        3. Include a professional email signature
+        4. Ensure mobile-friendly formatting
+        ${customInstructions ? `\nAdditional Instructions:\n${customInstructions}` : ''}
     `;
 
-    const defaultPrompt = `
-            1. Include our website link naturally: adya.ai
-            2. Add appropriate spacing and paragraphs
-            3. Include a professional email signature
-            4. Ensure mobile-friendly formatting
-    `
+    return `
+        ${stageTemplate}
 
-    const prompt = `
-        ${PROMPT_TEMPLATES(stage.toUpperCase(), baseContext)}
-    
+        ${baseContext}
+
         User's Prompt:
-        ${aiPrompt || defaultPrompt}
+        ${defaultPrompt}
 
         General Requirements:
         1. Make it sound natural and professional. Format the email body in valid HTML. 
         2. Return only a valid JSON string with format:
         {
-        "subject": "Compelling subject line",
-        "body": "HTML formatted email body"
+            "subject": "Compelling subject line",
+            "body": "HTML formatted email body"
         }
         3. Keep it short and concise.
         4. Use the company name and website in the email naturally.
-    `
-    if (!prompt) {
-        throw new Error(`Invalid stage: ${stage}. Available stages are: contact, lead, deal, account`);
-    }
-    return prompt;
+    `;
 };
+
+// Helper function to get context structure for frontend
+export const getContextStructure = () => CONTEXT_STRUCTURE;
 
