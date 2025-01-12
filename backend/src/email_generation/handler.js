@@ -29,9 +29,9 @@ class EmailGenerationHandler {
         try{
 
             const {body} = req;
-            const {toEmail, aiPrompt} = body;
+            const {toEmail, customContext} = body;
 
-            const response = await service.generateEmailWithAI(toEmail, aiPrompt);
+            const response = await service.generateEmailWithAI(toEmail, customContext);
 
             res.status(200).json({
                 message: "Email generated successfully",
@@ -45,6 +45,39 @@ class EmailGenerationHandler {
             });
         }
     }
+
+    async promptTemplateCreation(req, res){
+        try {
+            const response = await service.promptTemplateCreation();
+            
+            res.status(200).json({
+                message: "Prompt templates created successfully",
+                data: response
+            });
+        } catch (error) {
+            console.log("Handler error in prompt template creation: ", error);
+            res.status(500).json({
+                message: error.message || "Internal server error"
+            });
+        }
+    }
+
+    async getPromptTemplate(req, res){
+        try{
+            const {params} = req;
+            const {email} = params;
+
+            const response = await service.getTemplateForRecipient(email);
+
+            res.status(200).json({
+                message: "Prompt template fetched successfully",
+                data: response
+            });
+        } catch(error){
+
+        }
+    }
+
 }
 
 export default EmailGenerationHandler;

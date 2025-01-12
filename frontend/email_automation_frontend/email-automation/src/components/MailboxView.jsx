@@ -16,6 +16,8 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { mailboxAPI } from '../utils/apiLayer'
 import { toast } from 'react-toastify'
 import EmailView from './EmailView'
+import EmailComposerModal from './EmailComposer/EmailComposerModal'
+import { promptAPI } from '../utils/apiLayer'
 
 function MailboxView() {
   const [selectedEmail, setSelectedEmail] = useState(null)
@@ -559,52 +561,54 @@ function MailboxView() {
 
   const handleAIGenerate = async () => {
     if (!aiPrompt.trim()) {
-      toast.error('Please enter a prompt for the AI');
-      return;
+        toast.error('Please enter a prompt for the AI');
+        return;
     }
 
     try {
-      setLoading(true);
-      
-      // Prepare the payload
-      const payload = {
-        toEmail: showComposeModal ? newEmail.to : editedEmail.to,
-        aiPrompt: aiPrompt
-      };
+        setLoading(true);
+        
+        // Get the recipient email based on current mode
+        const toEmail = showComposeModal ? newEmail.to : editedEmail.to;
+        
+        // Prepare custom context with AI prompt
+        const customContext = {
+            aiPrompt: aiPrompt,
+            // You can add more context here if needed
+        };
 
-      // Make the API call
-      const response = await mailboxAPI.generateEmailWithAI(payload);
-      
-      if (response?.data?.data) {
-        // Parse the JSON string from the response
-        const generatedEmail = JSON.parse(response.data.data);
+        // Make the API call using promptAPI
+        const response = await promptAPI.generateEmail(toEmail, customContext);
+        
+        if (response?.data) {
+            const { subject, body } = response.data;
 
-        // Update the email content based on whether we're in compose or edit mode
-        if (showComposeModal) {
-          setNewEmail(prev => ({
-            ...prev,
-            subject: generatedEmail.subject,
-            body: generatedEmail.body
-          }));
-        } else if (editedEmail) {
-          setEditedEmail(prev => ({
-            ...prev,
-            subject: generatedEmail.subject,
-            body: generatedEmail.body
-          }));
+            // Update the email content based on whether we're in compose or edit mode
+            if (showComposeModal) {
+                setNewEmail(prev => ({
+                    ...prev,
+                    subject,
+                    body
+                }));
+            } else if (editedEmail) {
+                setEditedEmail(prev => ({
+                    ...prev,
+                    subject,
+                    body
+                }));
+            }
+
+            setShowAIPrompt(false);
+            setAIPrompt('');
+            toast.success('Email content generated successfully!');
+        } else {
+            throw new Error('Invalid response format from AI service');
         }
-
-        setShowAIPrompt(false);
-        setAIPrompt('');
-        toast.success('Email content generated successfully!');
-      } else {
-        throw new Error('Invalid response format from AI service');
-      }
     } catch (error) {
-      console.error('Error generating AI content:', error);
-      toast.error('Failed to generate AI content. Please try again.');
+        console.error('Error generating AI content:', error);
+        toast.error('Failed to generate AI content. Please try again.');
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
@@ -782,7 +786,7 @@ function MailboxView() {
               </div>
 
               {/* Body */}
-              <div className="mt-4 flex flex-col h-[300px]">
+              <div className="mt-4 flex flex-col h-[300px] relative">
                 <textarea 
                   className="w-full h-full outline-none text-sm resize-none p-2"
                   value={editedEmail.body}
@@ -797,7 +801,15 @@ function MailboxView() {
                 {formErrors.body && (
                   <div className="text-red-500 text-sm mt-2">{formErrors.body}</div>
                 )}
+
+                <EmailComposerModal 
+                  recipientEmail={editedEmail.to}
+                  onUpdateBody={(newBody) => handleComposeInputChange('body', newBody)}
+                  onUpdateSubject={(newSubject) => handleComposeInputChange('subject', newSubject)}
+                />
+
               </div>
+               
             </div>
 
             {/* Footer */}
@@ -822,9 +834,12 @@ function MailboxView() {
               {/* Formatting Tools */}
               <div className="flex items-center space-x-2 text-gray-600">
                 <button 
-                  className="p-2 hover:bg-gray-100 rounded" 
-                  title="AI Assistant"
-                  onClick={() => setShowAIPrompt(true)}
+                  className={`p-2 rounded ${
+                      editedEmail?.to ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'
+                  }`}
+                  title={editedEmail?.to ? "AI Assistant" : "Please enter recipient email first"}
+                  onClick={() => editedEmail?.to && setShowAIPrompt(true)}
+                  disabled={!editedEmail?.to}
                 >
                   <SparklesIcon className="h-4 w-4" />
                 </button>
@@ -948,7 +963,7 @@ function MailboxView() {
               </div>
 
               {/* Body */}
-              <div className="mt-4 h-[300px] flex flex-col">
+              <div className="mt-4 h-[300px] flex flex-col relative">
                 <textarea 
                   className={`w-full h-full outline-none text-sm resize-none p-2 ${formErrors.body ? 'border-red-300' : ''}`}
                   value={newEmail.body}
@@ -963,6 +978,12 @@ function MailboxView() {
                 {formErrors.body && (
                   <span className="text-red-500 text-xs mt-1">{formErrors.body}</span>
                 )}
+                
+                <EmailComposerModal 
+                  recipientEmail={newEmail.to}
+                  onUpdateBody={(newBody) => handleComposeInputChange('body', newBody)}
+                  onUpdateSubject={(newSubject) => handleComposeInputChange('subject', newSubject)}
+                />
               </div>
             </div>
 
@@ -994,9 +1015,12 @@ function MailboxView() {
               {/* Formatting Tools */}
               <div className="flex items-center space-x-2 text-gray-600">
                 <button 
-                  className="p-2 hover:bg-gray-100 rounded" 
-                  title="AI Assistant"
-                  onClick={() => setShowAIPrompt(true)}
+                  className={`p-2 rounded ${
+                      newEmail.to ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'
+                  }`}
+                  title={newEmail.to ? "AI Assistant" : "Please enter recipient email first"}
+                  onClick={() => newEmail.to && setShowAIPrompt(true)}
+                  disabled={!newEmail.to}
                 >
                   <SparklesIcon className="h-4 w-4" />
                 </button>

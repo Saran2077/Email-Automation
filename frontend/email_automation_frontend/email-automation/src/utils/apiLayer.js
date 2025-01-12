@@ -224,15 +224,37 @@ export const mailboxAPI = {
     },
 
     generateEmailWithAI: async (payload) => {
-      try {
-        const response = await axios.post(
-          'http://localhost:3000/api/v1/email_generation/generate_email_with_ai',
-          payload
-        );
-        return response;
-      } catch (error) {
-        console.error('Error in generateEmailWithAI:', error);
-        throw error;
-      }
+        try {
+            const response = await api.post('/v1/email_generation/generate_email_with_ai', payload);
+            return response.data;
+        } catch (error) {
+            console.error('Error in generateEmailWithAI:', error);
+            throw error;
+        }
     },
+};
+
+export const promptAPI = {
+    getPromptTemplate: async (recipientEmail) => {
+        try {
+            const response = await api.get(`/v1/email_generation/get_prompt_template/${recipientEmail}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching prompt template:', error);
+            throw error;
+        }
+    },
+
+    generateEmail: async (toEmail, customContext) => {
+        try {
+            const response = await api.post('/v1/email_generation/generate_email_with_ai', {
+                toEmail,
+                customContext
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error generating email:', error);
+            throw error;
+        }
+    }
 };
