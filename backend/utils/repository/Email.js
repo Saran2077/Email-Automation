@@ -14,9 +14,7 @@ class EmailRepository {
   async getById(emailId) {
     try {
       return await Email.findOne({ emailId })
-        .populate('from')
         .populate('to')
-        .populate('campaign');
     } catch (error) {
       throw new Error(`Error fetching email: ${error.message}`);
     }

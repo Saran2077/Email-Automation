@@ -232,6 +232,16 @@ class MailboxService {
         }
     }
 
+    async getEmailById(emailId){
+        try {
+            // Use the repository's getRecipientEmails method with 'sent' type
+            const email = await emailRepository.getById(emailId);
+            return email;
+        } catch(error) {
+            throw error;
+        }
+    }
+
 
     async deleteEmail(email, recipient) {
 

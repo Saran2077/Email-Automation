@@ -28,6 +28,15 @@ export const recipientAPI = {
     }
   },
 
+  getById: async (id) => {
+    try {
+      const response = await api.get(`/v1/recipients/get/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   update: async (id, data) => {
     try {
       const response = await api.post(`/v1/recipients/update/${id}`, data);
@@ -231,6 +240,18 @@ export const mailboxAPI = {
             console.error('Error in generateEmailWithAI:', error);
             throw error;
         }
+    },
+
+    getEmail: async (emailId) => {
+      try {
+        const response = await api.get(`/v1/mailbox/${emailId}`);
+        if (!response?.data?.success) throw new Error('Failed to fetch email');
+
+        return response?.data?.data;
+      } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+      }
     },
 };
 

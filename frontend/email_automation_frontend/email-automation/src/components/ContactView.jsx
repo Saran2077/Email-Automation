@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Mail, Linkedin, Building2, User, Briefcase, Calendar, MessageSquare, Trophy, TrendingUp } from 'lucide-react';
 import TextArea from 'antd/es/input/TextArea';
+import { recipientAPI } from '../utils/apiLayer';
+import { useNavigate, useParams } from 'react-router-dom';
 
 export default function ContactView({ 
-  contact = {
+  contact2 = {
     "_id": {"$oid":"6781040caee848ecaf96e2ee"},
     "recipientId": {"$numberInt":"117"},
     "name": "Viswesh Ananthakrishnan",
@@ -19,11 +21,30 @@ export default function ContactView({
     "metrics": {"delivered":0,"opened":0,"clicked":0,"failed":0}
   }
 }) {
-  const [stage, setStage] = useState(contact?.stage);
+  const [stage, setStage] = useState(null);
+  const navigate = useNavigate();
   const [note, setNote] = useState('');
   const [notes, setNotes] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [editingIndex, setEditingIndex] = useState(null);
+  const [contact, setContact] = useState({});
+  const { id } = useParams();
+
+  useEffect(() => {
+    fetchContact();
+  }, [id])
+
+  const fetchContact = async() => {
+    try {
+      if (!id) return;
+      const response = await recipientAPI.getById(id);
+      console.log(response)
+      setContact(response);
+      setStage(response?.stage)
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const handleAddNote = () => {
     if (note.trim()) {
@@ -36,6 +57,21 @@ export default function ContactView({
       setNote('');
     }
   };
+
+  const handleStageChange = async (recipientData, newStage) => {
+    try {
+      await recipientAPI.updateStage(recipientData?._id, { stage: newStage, email: recipientData?.email })
+      setContact((prevRecipients) => ({
+        ...prevRecipients,
+        stage: newStage
+      })
+        
+      )
+    } catch (err) {
+      console.error('Error updating stage:', err)
+      setError('Failed to update stage')
+    }
+  }
 
   const handleEditNote = (index) => {
     const updatedNote = prompt("Edit your note:", notes[index].text);
@@ -77,17 +113,17 @@ export default function ContactView({
               </p>
             </div>
             <div className="flex gap-3">
-              <button className="px-4 py-2 bg-white/10 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors backdrop-blur-sm">
+              <button className="px-4 py-2 bg-white/10 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors backdrop-blur-sm" onClick={() => navigate('/mailbox')}>
                 <Mail className="w-4 h-4" /> Email
               </button>
-              <button className="px-4 py-2 bg-white rounded-lg flex items-center gap-2 hover:bg-gray-100 transition-colors text-blue-600">
+              <button className="px-4 py-2 bg-white rounded-lg flex items-center gap-2 hover:bg-gray-100 transition-colors text-blue-600" onClick={() => window.open(contact?.linkedinHandle)}>
                 <Linkedin className="w-4 h-4" /> LinkedIn
               </button>
             </div>
           </div>
 
           {/* Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+          {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
             <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
               <p className="text-blue-100 text-sm">Emails Delivered</p>
               <p className="text-2xl font-bold">{contact.metrics.delivered}</p>
@@ -104,13 +140,13 @@ export default function ContactView({
               <p className="text-blue-100 text-sm">Failed Sends</p>
               <p className="text-2xl font-bold">{contact.metrics.failed}</p>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Navigation */}
         <div className="border-b">
           <div className="flex space-x-6 px-6">
-            <button 
+            <button
               onClick={() => setActiveTab('overview')}
               className={`py-4 px-2 -mb-px font-medium text-sm flex items-center gap-2 
                 ${activeTab === 'overview' 
@@ -180,7 +216,7 @@ export default function ContactView({
                   <h3 className="text-lg font-semibold mb-4">Stage</h3>
                   <select 
                     value={stage} 
-                    onChange={(e) => setStage(e.target.value)}
+                    onChange={(e) => {setStage(e.target.value); handleStageChange(contact, e.target.value);}} 
                     className="w-full p-3 border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   >
                     <option value="Contact">Contact</option>

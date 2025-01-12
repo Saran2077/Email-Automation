@@ -18,8 +18,8 @@ function App() {
             <Route path="/customers" element={<CustomerScraper />} />
             <Route path="/recipients" element={<RecipientDashboard />} />
             <Route path="/mailbox" element={<MailboxView />} />
-            <Route path="/emailview" element={<EmailView />} />
-            <Route path="/contactView" element={<ContactView />} />
+            <Route path="/emailview/:id" element={<EmailView />} />
+            <Route path="/contactView/:id" element={<ContactView />} />
             <Route path="/" element={<CustomerScraper />} />
           </Routes>
         </main>

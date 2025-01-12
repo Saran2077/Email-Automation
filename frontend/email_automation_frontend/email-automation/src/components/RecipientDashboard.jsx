@@ -2,9 +2,13 @@ import { useState, useEffect } from 'react'
 import { recipientAPI, dashboardAPI } from '../utils/apiLayer'
 import EmailStatsDashboard from './EmailStatsDashboard'
 import { Select } from 'antd'
+import { IconButton } from '@mui/material'
+import { EyeIcon } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 function RecipientDashboard() {
   const [recipients, setRecipients] = useState([])
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [dashboardMetricsLoading, setDashboardMetricsLoading] = useState(true)
   const [dashboardMetrics, setDashboardMetrics] = useState(true)
@@ -75,7 +79,7 @@ function RecipientDashboard() {
     <div className="p-6">
       {!dashboardMetricsLoading && <EmailStatsDashboard stats={dashboardMetrics} />}
       <h2 className="text-2xl font-semibold mt-4 mb-4">Recipients</h2>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="min-w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -83,6 +87,7 @@ function RecipientDashboard() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stage</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -104,6 +109,11 @@ function RecipientDashboard() {
                   {/* <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                     {recipient.stage}
                   </span> */}
+                </td>
+                <td>
+                  <IconButton onClick={() => navigate(`/contactView/${recipient?.recipientId}`)}>
+                    <EyeIcon size={20} />
+                  </IconButton>
                 </td>
               </tr>
             ))}

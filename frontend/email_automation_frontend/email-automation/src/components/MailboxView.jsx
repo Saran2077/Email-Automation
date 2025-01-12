@@ -15,11 +15,12 @@ import {
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { mailboxAPI } from '../utils/apiLayer'
 import { toast } from 'react-toastify'
-import EmailView from './EmailView'
 import EmailComposerModal from './EmailComposer/EmailComposerModal'
 import { promptAPI } from '../utils/apiLayer'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 function MailboxView() {
+  const navigate = useNavigate();
   const [selectedEmail, setSelectedEmail] = useState(null)
   const [isUpdating, setIsUpdating] = useState(false)
   const [activeFolder, setActiveFolder] = useState('inbox')
@@ -31,6 +32,7 @@ function MailboxView() {
     trash: []
   })
   const [loading, setLoading] = useState(false)
+  const location = useLocation();
   const [error, setError] = useState(null)
   const [minimizedEmails, setMinimizedEmails] = useState([])
   const [isMinimized, setIsMinimized] = useState(false)
@@ -73,6 +75,18 @@ function MailboxView() {
     fetchInitialData();
   }, []); // Empty dependency array means this runs once on mount
 
+  useEffect(() => {
+    if (location.state) {
+      const { subject, originalEmail, body, isForward } = location.state;
+      setNewEmail({
+        subject,
+        body,
+        to: ''
+      })
+      setShowComposeModal(true)
+    }
+  }, [location.state])
+
   // Initialize edited email when a draft is selected
   useEffect(() => {
     if (selectedEmail && activeFolder === 'drafts') {
@@ -82,6 +96,8 @@ function MailboxView() {
         to: selectedEmail.to,
         body: selectedEmail.preview
       });
+    } else if (selectedEmail) {
+      navigate(`/emailView/${selectedEmail.id}`);
     }
   }, [selectedEmail]);
 
@@ -510,9 +526,9 @@ function MailboxView() {
       subject: '',
       body: ''
     };
-
+    
     // Only validate email format if an email is provided
-    if (newEmail.to.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.to.trim())) {
+    if (!newEmail.to.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.to.trim())) {
       errors.to = 'Please enter a valid email address';
       hasErrors = true;
     }
@@ -706,8 +722,8 @@ function MailboxView() {
                     </span>
                     <span className="text-xs text-gray-500 ml-2 flex-shrink-0">{email.date}</span>
                   </div>
-                  <div className="text-sm text-gray-900 font-medium truncate">{email.subject}</div>
-                  <p className="text-sm text-gray-500 truncate">{email.preview}</p>
+                  <div className="text-sm text-gray-900 font-medium line-clamp-1" title={email.subject}>{email.subject}</div>
+                  <p className="text-sm text-gray-500 line-clamp-1" title={email.preview}>{email.preview}</p>
                 </div>
               </div>
             ))}
