@@ -28,11 +28,24 @@ export default function ContactView({
   const [activeTab, setActiveTab] = useState('overview');
   const [editingIndex, setEditingIndex] = useState(null);
   const [contact, setContact] = useState({});
+  const [metrics, setMetrics] = useState({});
   const { id } = useParams();
 
   useEffect(() => {
     fetchContact();
+    fetchMetrics();
   }, [id])
+
+  const fetchMetrics = async() => {
+    try {
+      if (!id) return;
+      const response = await recipientAPI.getMetrics(id);
+      console.log(response)
+      setMetrics(response?.metrics);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const fetchContact = async() => {
     try {
@@ -113,7 +126,11 @@ export default function ContactView({
               </p>
             </div>
             <div className="flex gap-3">
-              <button className="px-4 py-2 bg-white/10 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors backdrop-blur-sm" onClick={() => navigate('/mailbox')}>
+              <button className="px-4 py-2 bg-white/10 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors backdrop-blur-sm" onClick={() => navigate('/mailbox', {state: {
+                to: contact?.email,
+                subject: '',
+                body: ''
+              }})}>
                 <Mail className="w-4 h-4" /> Email
               </button>
               <button className="px-4 py-2 bg-white rounded-lg flex items-center gap-2 hover:bg-gray-100 transition-colors text-blue-600" onClick={() => window.open(contact?.linkedinHandle)}>
@@ -123,24 +140,24 @@ export default function ContactView({
           </div>
 
           {/* Metrics */}
-          {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
             <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
               <p className="text-blue-100 text-sm">Emails Delivered</p>
-              <p className="text-2xl font-bold">{contact.metrics.delivered}</p>
+              <p className="text-2xl font-bold">{metrics.delivered || 0}</p>
             </div>
             <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
               <p className="text-blue-100 text-sm">Emails Opened</p>
-              <p className="text-2xl font-bold">{contact.metrics.opened}</p>
+              <p className="text-2xl font-bold">{metrics.opened || 0}</p>
             </div>
             <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
               <p className="text-blue-100 text-sm">Links Clicked</p>
-              <p className="text-2xl font-bold">{contact.metrics.clicked}</p>
+              <p className="text-2xl font-bold">{metrics.clicked || 0}</p>
             </div>
             <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
               <p className="text-blue-100 text-sm">Failed Sends</p>
-              <p className="text-2xl font-bold">{contact.metrics.failed}</p>
+              <p className="text-2xl font-bold">{metrics.failed || 0}</p>
             </div>
-          </div> */}
+          </div>
         </div>
 
         {/* Navigation */}
@@ -155,7 +172,7 @@ export default function ContactView({
             >
               <User className="w-4 h-4" /> Overview
             </button>
-            <button 
+            {/* <button 
               onClick={() => setActiveTab('activity')}
               className={`py-4 px-2 -mb-px font-medium text-sm flex items-center gap-2 
                 ${activeTab === 'activity' 
@@ -163,7 +180,7 @@ export default function ContactView({
                   : 'text-gray-500 hover:text-gray-700'}`}
             >
               <TrendingUp className="w-4 h-4" /> Activity
-            </button>
+            </button> */}
             <button 
               onClick={() => setActiveTab('notes')}
               className={`py-4 px-2 -mb-px font-medium text-sm flex items-center gap-2 

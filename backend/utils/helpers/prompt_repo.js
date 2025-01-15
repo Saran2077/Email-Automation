@@ -16,6 +16,57 @@ const STAGE_TEMPLATES = {
             "Avoid aggressive sales language",
             "Focus on value-addition rather than selling"
         ]
+    },
+    LEAD: {
+        role: "As a strategic sales consultant, create a follow-up communication for a qualified lead who has shown interest.",
+        guidelines: [
+            "Reference specific points from previous interactions",
+            "Address identified pain points with concrete solutions",
+            "Include relevant case studies or success stories",
+            "Provide clear next steps in the evaluation process",
+            "Suggest a detailed discovery call or demo",
+            "Include specific value propositions aligned with their needs"
+        ],
+        tone: [
+            "Confident and knowledgeable",
+            "Solution-oriented",
+            "Build on established rapport",
+            "Maintain professional enthusiasm"
+        ]
+    },
+    DEAL: {
+        role: "As a senior sales strategist, draft a proposal follow-up for an active deal in negotiation.",
+        guidelines: [
+            "Summarize key points from the proposal",
+            "Address any concerns or objections raised",
+            "Highlight ROI and specific business benefits",
+            "Include timeline and implementation details",
+            "Present clear pricing and package options",
+            "Outline immediate next steps for closing"
+        ],
+        tone: [
+            "Direct and clear",
+            "Emphasize partnership approach",
+            "Focus on mutual success",
+            "Create sense of momentum"
+        ]
+    },
+    ACCOUNT: {
+        role: "As an account management expert, create communication for nurturing an existing client relationship.",
+        guidelines: [
+            "Review current usage and success metrics",
+            "Suggest optimization opportunities",
+            "Share relevant product updates or new features",
+            "Propose expansion opportunities",
+            "Include industry insights and best practices",
+            "Schedule quarterly business review"
+        ],
+        tone: [
+            "Collaborative and consultative",
+            "Long-term relationship focused",
+            "Proactive and strategic",
+            "Demonstrate ongoing value"
+        ]
     }
 };
 
@@ -106,7 +157,7 @@ export const getPromptForStage = ({ stage, contextData, customContext, aiPrompt 
     const baseContext = buildBaseContext(finalContext);
     const stageTemplate = buildStageTemplate(stage);
     const defaultPrompt = `
-        1. Include our website link naturally: adya.ai
+        1. Include our website link naturally: https://adya.ai
         2. Add appropriate spacing and paragraphs
         3. Include a professional email signature
         4. Ensure mobile-friendly formatting
@@ -130,6 +181,7 @@ export const getPromptForStage = ({ stage, contextData, customContext, aiPrompt 
         }
         3. Keep it short and concise.
         4. Use the company name and website in the email naturally.
+        5. No need of explanations return only json.
     `;
 };
 

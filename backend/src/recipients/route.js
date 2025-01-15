@@ -12,5 +12,6 @@ router.post('/update/:id', recipientHandler.updateRecipient);
 router.post('/update_stage/:id', recipientHandler.updateRecipientStage);
 router.delete('/delete/:id', recipientHandler.deleteRecipient);
 router.get('/list', recipientHandler.listRecipients);
+router.get('/metrics/:emailId', recipientHandler.getRecipientMetrics);
 
 export default router;

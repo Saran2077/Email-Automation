@@ -1,7 +1,9 @@
+import DashboardService from "../dashboard/service.js";
 import { getAllCustomFields, getContactsData, updateContact } from "../services/activeCampaign.js";
 import RecipientService from "./service.js";
 
 const recipientService = new RecipientService();
+const dashboardService = new DashboardService();
 
 class RecipientHandler {
     
@@ -80,10 +82,45 @@ class RecipientHandler {
 
     async listRecipients(req, res, next) {
         try {
-            const recipients = await recipientService.listRecipients();
+            const { page = 1, limit = 10, search, stage } = req.query;
+            const filters = {};
+    
+            // Add search filter for name, email, and company using MongoDB $or operator
+            if (search) {
+                filters.$or = [
+                    { name: { $regex: search, $options: 'i' } },
+                    { email: { $regex: search, $options: 'i' } },
+                    { company: { $regex: search, $options: 'i' } }
+                ];
+            }
+    
+            // Add stage filter
+            if (stage && stage !== 'all') {
+                filters.stage = stage;
+            }
+    
+            const recipients = await recipientService.listRecipients(filters, page, limit);
             res.status(200).json(recipients);
         } catch (error) {
             res.status(500).json({ error: error.message });
+        }
+    }
+
+    async getRecipientMetrics(req, res, next) {
+        try {
+            const { emailId } = req.params;
+            const recipient = await recipientService.getRecipient(emailId);
+
+            if (!recipient) {
+                return res.status(404).json({
+                    success: false,
+                    message: `Recipient not found with email ID: ${emailId}`
+                })
+            }
+            const metrics = await dashboardService.getRecipientMetrics(recipient?.email);
+            res.status(200).json({ success: true, metrics});
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
         }
     }
 

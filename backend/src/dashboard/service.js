@@ -59,6 +59,46 @@ class DashboardService {
                 return error;
             }
     }
+    async getRecipientMetrics(emailId) {
+            const headers = {
+                'Content-Type': 'application/json',
+                Authorization: 'Basic ' + Buffer.from(`api:${process.env.API_KEY}`).toString('base64')
+            }
+
+            const domainName = process.env.MAILGUN_URL;
+            
+            try {
+              const response = await fetch(
+                `https://api.mailgun.net/v3/${domainName}/events?recipient=${emailId}`,
+                {
+                  method: 'GET',
+                  headers: headers
+                }
+              );
+          
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+          
+              const data = await response.json();
+
+              const segregatedData = data.items.reduce((acc, item) => {
+                const { event } = item;
+                if (!acc[event]) {
+                  acc[event] = 0;
+                }
+                acc[event] = acc[event] + 1;
+                return acc;
+              }, {})
+                  
+              return segregatedData;
+          } catch (error) {
+            console.log(error)
+              return error;
+          }
+    }
+
+
 }
 
 export default DashboardService

@@ -21,8 +21,8 @@ class RecipientService {
         return await RecipientRepository.delete(id);
     }
 
-    async listRecipients() {
-        return await RecipientRepository.list();
+    async listRecipients(filters, page, limit) {
+        return await RecipientRepository.list(filters, page, limit);
     }
 
     async bulkCreateRecipients(recipients) {

@@ -129,6 +129,6 @@ async function email_replied(req, res) {
         error: error.message
       });
     }
-  }
+}
 
 export { email_clicked, email_opened, email_replied };

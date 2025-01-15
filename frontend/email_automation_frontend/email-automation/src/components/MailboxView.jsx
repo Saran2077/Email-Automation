@@ -77,11 +77,11 @@ function MailboxView() {
 
   useEffect(() => {
     if (location.state) {
-      const { subject, originalEmail, body, isForward } = location.state;
+      const { subject, originalEmail, body, isForward, to } = location.state;
       setNewEmail({
         subject,
         body,
-        to: ''
+        to: to || ""
       })
       setShowComposeModal(true)
     }
@@ -406,7 +406,7 @@ function MailboxView() {
       const emailData = {
         emailId: email.id,
         subject: email.subject,
-        body: email.body,
+        body: plainTextToHtml(email.body),
         to: email.to,
         from: "postmaster@sandboxed091eb00b0a47fa91a3c0113be24b39.mailgun.org"
       };
@@ -432,6 +432,20 @@ function MailboxView() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const htmlToPlainText = (html) => {
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = html;
+    return tempDiv.textContent || tempDiv.innerText || "";
+  };
+
+  // Convert plain text back to HTML (in this case, keeping it simple)
+  const plainTextToHtml = (text) => {
+    return text
+      .split("\n")
+      .map((line) => `<p>${line}</p>`)
+      .join(""); // Wrap each line in <p> tags
   };
 
   const handleComposeEmail = async () => {
@@ -478,7 +492,7 @@ function MailboxView() {
       
       const emailData = {
         subject: newEmail.subject,
-        body: newEmail.body,
+        body: plainTextToHtml(newEmail.body),
         to: newEmail.to,
         from: "postmaster@sandboxed091eb00b0a47fa91a3c0113be24b39.mailgun.org"
       };
@@ -631,32 +645,38 @@ function MailboxView() {
   return (
     <div className="flex h-full bg-gray-50">
       {/* Left Sidebar */}
-      <div className="w-64 border-r bg-white shadow-sm">
-        <div className="p-4">
+      <div className="w-72 bg-white shadow-lg">
+        <div className="p-6">
           <button 
             onClick={() => setShowComposeModal(true)}
-            className="w-full bg-blue-600 text-white rounded-full px-4 py-2.5 hover:bg-blue-700 transition-colors font-medium text-sm"
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg px-6 py-3 hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
             Compose
           </button>
         </div>
-        <nav className="mt-2">
+        <nav className="mt-4 px-3">
           {folders.map((folder) => (
             <button
               key={folder.id}
               onClick={() => setActiveFolder(folder.id)}
-              className={`w-full flex items-center justify-between px-6 py-2.5 text-sm ${
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg mb-1 transition-all duration-200 ${
                 activeFolder === folder.id
-                  ? 'bg-blue-50 text-blue-600 font-medium'
-                  : 'text-gray-700 hover:bg-gray-50'
+                  ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 font-medium shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
               <div className="flex items-center">
-                <folder.icon className="h-4 w-4 mr-3" />
-                {folder.name}
+                <folder.icon className={`h-5 w-5 mr-3 ${
+                  activeFolder === folder.id ? 'text-indigo-600' : 'text-gray-400'
+                }`} />
+                <span className="text-sm">{folder.name}</span>
               </div>
               {folder.count > 0 && (
-                <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                  activeFolder === folder.id 
+                    ? 'bg-indigo-100 text-indigo-600' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
                   {folder.count}
                 </span>
               )}
@@ -666,70 +686,66 @@ function MailboxView() {
       </div>
 
       {/* Email List */}
-      <div className="flex-1 bg-white">
-        <div className="h-14 border-b flex items-center justify-between px-4 bg-white sticky top-0">
-          <input 
-            type="text"
-            placeholder="Search emails..."
-            className="w-full px-3 py-1.5 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white mr-4"
-          />
+      <div className="flex-1 bg-white ml-1 shadow-lg">
+        <div className="h-16 border-b flex items-center justify-between px-6 bg-white sticky top-0 z-10">
+          <div className="relative flex-1 max-w-2xl">
+            <input 
+              type="text"
+              placeholder="Search emails..."
+              className="w-full px-4 py-2 bg-gray-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white border border-gray-200 pl-10"
+            />
+            <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
           {(activeFolder === 'drafts' || activeFolder === 'sent') && (
             <button 
-              onClick={() => activeFolder === 'drafts' ? fetchDraftEmails(true) : fetchSentEmails(true)}
-              className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
+              className="p-2 text-gray-500 hover:text-indigo-600 rounded-full hover:bg-indigo-50 ml-4 transition-colors"
               title={`Refresh ${activeFolder}`}
+              onClick={() => activeFolder === 'drafts' ? fetchDraftEmails(true) : fetchSentEmails(true)}
             >
               <ArrowPathIcon className="h-5 w-5" />
             </button>
           )}
         </div>
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <p>Loading emails...</p>
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-full text-red-500">
-            <p>{error}</p>
-          </div>
-        ) : (
-          <div className="overflow-auto h-[calc(100vh-3.5rem)]">
-            {(emails[activeFolder] || []).map((email) => (
-              <div
-                key={email.id}
-                onClick={() => setSelectedEmail(email)}
-                className={`flex items-center px-6 py-3 border-b cursor-pointer ${
-                  email.unread ? 'font-medium bg-blue-50' : ''
-                } hover:bg-gray-50 transition-colors`}
+
+        <div className="overflow-auto h-[calc(100vh-4rem)]">
+          {(emails[activeFolder] || []).map((email) => (
+            <div
+              key={email.id}
+              onClick={() => setSelectedEmail(email)}
+              className={`flex items-center px-6 py-4 border-b cursor-pointer ${
+                email.unread ? 'bg-indigo-50' : 'hover:bg-gray-50'
+              } transition-all duration-200`}
+            >
+              <button
+                className="mr-4 flex-shrink-0 transition-transform hover:scale-110"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  toggleStar(email)
+                }}
               >
-                <button
-                  disabled={isUpdating}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleStar(email)
-                  }}
-                  className="mr-4 flex-shrink-0"
-                >
-                  {email.starred ? (
-                    <StarIconSolid className="h-4 w-4 text-yellow-400" />
-                  ) : (
-                    <StarIconOutline className="h-4 w-4 text-gray-400" />
-                  )}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-0.5">
-                    <span className="block truncate text-sm">
-                      {activeFolder === 'sent' ? `To: ${email.to}` : email.from}
-                    </span>
-                    <span className="text-xs text-gray-500 ml-2 flex-shrink-0">{email.date}</span>
-                  </div>
-                  <div className="text-sm text-gray-900 font-medium line-clamp-1" title={email.subject}>{email.subject}</div>
-                  <p className="text-sm text-gray-500 line-clamp-1" title={email.preview}>{email.preview}</p>
+                {email.starred ? (
+                  <StarIconSolid className="h-5 w-5 text-yellow-400" />
+                ) : (
+                  <StarIconOutline className="h-5 w-5 text-gray-400" />
+                )}
+              </button>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm font-medium text-gray-900">
+                    {activeFolder === 'sent' ? `To: ${email.to}` : email.from}
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium">{email.date}</span>
                 </div>
+                <div className="text-sm text-gray-800 font-medium line-clamp-1">{email.subject}</div>
+                <p className="text-sm text-gray-500 line-clamp-1">{email.preview}</p>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </div>
+
 
       {/* Updated Draft Email Modal */}
       {selectedEmail && activeFolder === 'drafts' && editedEmail && (
@@ -805,7 +821,7 @@ function MailboxView() {
               <div className="mt-4 flex flex-col h-[300px] relative">
                 <textarea 
                   className="w-full h-full outline-none text-sm resize-none p-2"
-                  value={editedEmail.body}
+                  value={htmlToPlainText(editedEmail.body)}
                   onChange={(e) => {
                     handleInputChange('body', e.target.value);
                     if (formErrors.body) {
@@ -907,7 +923,7 @@ function MailboxView() {
 
       {showComposeModal && (
         <Draggable handle=".modal-handle" bounds="body">
-          <div className="fixed bottom-0 right-24 w-[600px] bg-white rounded-t-lg shadow-xl z-50 flex flex-col">
+          <div className="fixed bottom-0 right-24 w-[600px] bg-white rounded-t-xl shadow-2xl z-50 flex flex-col">
             {/* Modal Header */}
             <div className="modal-handle flex items-center justify-between px-4 py-2 bg-gray-100 rounded-t-lg cursor-move">
               <h3 className="text-sm font-medium text-gray-700">New Message</h3>

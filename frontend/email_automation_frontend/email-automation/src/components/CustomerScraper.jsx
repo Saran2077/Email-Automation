@@ -87,7 +87,7 @@ function CustomerScraper() {
 
   const handleSelectAll = () => {
     setSelectedCustomers(
-      selectedCustomers.length === customers?.data.length
+      selectedCustomers.length === customers?.data.flatMap(customer => customer?.Employee_List?.map(employee => ({...employee, ...customer, Employee_List: undefined})))?.length
         ? []
         : customers?.data.flatMap(customer => customer?.Employee_List?.map(employee => ({...employee, ...customer, Employee_List: undefined})))
     )
@@ -196,6 +196,7 @@ function CustomerScraper() {
           onApply={handleApplyFilters}
           onClose={() => setShowFilterModal(false)}
           initialFilters={filters}
+          visible={showFilterModal}
         />
       )}
 
@@ -205,7 +206,7 @@ function CustomerScraper() {
             <label className="flex items-center">
               <input
                 type="checkbox"
-                checked={selectedCustomers.length === customers?.data.length}
+                checked={selectedCustomers.length === customers?.data.flatMap(customer => customer?.Employee_List?.map(employee => ({...employee, ...customer, Employee_List: undefined})))?.length}
                 onChange={handleSelectAll}
                 className="rounded border-gray-300"
               />

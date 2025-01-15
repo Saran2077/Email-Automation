@@ -19,9 +19,11 @@ export const recipientAPI = {
     }
   },
 
-  list: async () => {
+  list: async (params) => {
     try {
-      const response = await api.get('/v1/recipients/list');
+      const response = await api.get('/v1/recipients/list', {
+        params: params
+      });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -31,6 +33,15 @@ export const recipientAPI = {
   getById: async (id) => {
     try {
       const response = await api.get(`/v1/recipients/get/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  getMetrics: async (id) => {
+    try {
+      const response = await api.get(`/v1/recipients/metrics/${id}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
