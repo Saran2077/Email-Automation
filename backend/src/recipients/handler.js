@@ -1,9 +1,10 @@
+import EmailRepository from "../../utils/repository/Email.js";
 import DashboardService from "../dashboard/service.js";
 import { getAllCustomFields, getContactsData, updateContact } from "../services/activeCampaign.js";
 import RecipientService from "./service.js";
 
 const recipientService = new RecipientService();
-const dashboardService = new DashboardService();
+const emailService = new EmailRepository();
 
 class RecipientHandler {
     
@@ -117,7 +118,37 @@ class RecipientHandler {
                     message: `Recipient not found with email ID: ${emailId}`
                 })
             }
-            const metrics = await dashboardService.getRecipientMetrics(recipient?.email);
+            const opened = await emailService.countDocuments({
+                status: 'opened'
+              });
+          
+              // Get clicked count from status array
+              const clicked = await emailService.countDocuments({
+                status: 'clicked'
+              });
+          
+              // Get failed count combining hard and soft bounces
+              const failed = await emailService.countDocuments({
+                $or: [
+                  { status: 'hard-bounced' },
+                  { status: 'soft-bounced' },
+                  { isFailed: true }
+                ]
+              });
+          
+              // Get complaints count from status
+              const complaints = await emailService.countDocuments({
+                status: 'complaints'
+              });
+              
+              const metrics =  {
+                opened,
+                clicked,
+                failed,
+                complaints
+              };
+
+              console.log(metrics);
             res.status(200).json({ success: true, metrics});
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });

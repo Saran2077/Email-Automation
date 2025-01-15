@@ -48,7 +48,7 @@ class MailboxService {
         try {
             // Use the repository's getRecipientEmails method with 'drafts' type
             const draftEmails = await emailRepository.list(
-                { isDraft: true, status: 'draft' }
+                { isDraft: true }
             );
 
             return {
@@ -158,7 +158,7 @@ class MailboxService {
         }
     }
 
-    async sendEmail(emailId, subject, body, to, from) {
+    async sendEmail(emailId, subject, body, to, from, message_id) {
         try {
             let emailToSend;
 
@@ -181,7 +181,7 @@ class MailboxService {
                         from,
                         isDraft: false,
                         isSent: true,
-                        status: 'sent'
+                        messageId: message_id
                     }
                 );
             } else {
@@ -193,7 +193,7 @@ class MailboxService {
                     from,
                     isDraft: false,
                     isSent: true,
-                    status: 'sent'
+                    messageId: message_id
                 });
             }
 
@@ -218,7 +218,7 @@ class MailboxService {
         try {
             // Use the repository's getRecipientEmails method with 'sent' type
             const sentEmails = await emailRepository.list(
-                { isSent: true, status: 'sent' }
+                { isSent: true }
             );
             return {
                 success: true,

@@ -10,6 +10,10 @@ class EmailRepository {
     }
   }
 
+  async countDocuments(filter = {}) {
+    return await Email.countDocuments(filter)
+}
+
   // Get an email by ID
   async getById(emailId) {
     try {
@@ -19,6 +23,16 @@ class EmailRepository {
       throw new Error(`Error fetching email: ${error.message}`);
     }
   }
+
+  async get(query) {
+    try {
+      return await Email.findOne({ ...query })
+        .populate('to')
+    } catch (error) {
+      throw new Error(`Error fetching email: ${error.message}`);
+    }
+  }
+
 
   // Get all emails with optional filters
   async list(filters = {}) {

@@ -60,7 +60,17 @@ const promptTemplateSchema = new mongoose.Schema({
     companyName: {
       type: String,
     }
-  }
+  },
+  customPrompt: [{
+    name: {
+      type: String,
+      required: true
+    },
+    content: {
+      type: String,
+      required: true
+    }
+  }]
 }, {
   timestamps: true
 });

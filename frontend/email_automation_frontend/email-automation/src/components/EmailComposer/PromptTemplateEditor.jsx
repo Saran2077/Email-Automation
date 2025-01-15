@@ -23,9 +23,11 @@ import {
     ChevronDownIcon,
     AdjustmentsHorizontalIcon,
     XMarkIcon,
-    CogIcon
+    CogIcon,
+    DocumentTextIcon,
+    PlayIcon
 } from '@heroicons/react/24/outline';
-import { promptAPI } from '../../utils/apiLayer';
+import { mailboxAPI, promptAPI } from '../../utils/apiLayer';
 import { toast } from 'react-toastify';
 
 // Helper function to format section names for display
@@ -47,6 +49,34 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
     const [newRows, setNewRows] = useState({});
     const [customInstructions, setCustomInstructions] = useState('');
 
+    const [customPrompts, setCustomPrompts] = useState([]);
+    const [showPromptForm, setShowPromptForm] = useState(false);
+    const [newPrompt, setNewPrompt] = useState({ name: '', content: '' });
+
+    // Previous useEffect and functions remain the same...
+
+    const handleAddPrompt = async () => {
+        if (newPrompt.name && newPrompt.content) {
+            setCustomPrompts([...customPrompts, { ...newPrompt }]);
+            const response = await promptAPI.updatePromptTemplate(recipientEmail, {data: { customPrompt: [...customPrompts, { ...newPrompt }]}})
+            setNewPrompt({ name: '', content: '' });
+            setShowPromptForm(false);
+            toast.success('Custom prompt added successfully!');
+        }
+    };
+
+    const handleDeletePrompt = async (index) => {
+        setCustomPrompts(customPrompts.filter((_, i) => i !== index));
+        const response = await promptAPI.updatePromptTemplate(recipientEmail, {data: { customPrompt: customPrompts.filter((_, i) => i !== index)}})
+        toast.success('Custom prompt removed');
+    };
+
+    const handleEditPrompt = (index) => {
+        setNewPrompt(customPrompts[index]);
+        setCustomPrompts(customPrompts.filter((_, i) => i !== index));
+        setShowPromptForm(true);
+    };
+
     useEffect(() => {
         fetchTemplateData();
     }, [recipientEmail]);
@@ -56,6 +86,7 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
             const result = await promptAPI.getPromptTemplate(recipientEmail);
             if (result.data) {
                 setTemplateData(result.data);
+                setCustomPrompts(result?.data?.customPrompt || [])
                 // Initialize expanded sections
                 const sections = Object.keys(result.data).filter(key => 
                     typeof result.data[key] === 'object' && !Array.isArray(result.data[key])
@@ -80,7 +111,31 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
             setLoading(true);
             const result = await promptAPI.generateEmail(recipientEmail, {
                 ...templateData,
-                customInstructions
+                customInstructions,
+                customPrompt: null
+            });
+            if (result?.data) {
+                const { body, subject } = result.data;
+                onUpdateBody(body);
+                onUpdateSubject(subject);
+                toast.success('Email generated successfully!');
+                onClose();
+            }
+        } catch (error) {
+            toast.error('Failed to generate email');
+            console.error('Failed to generate email:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleApplyPrompt = async (index) => {
+        try {
+            setLoading(true);
+            const result = await promptAPI.generateEmail(recipientEmail, {
+                ...templateData,
+                customInstructions,
+                customPrompt: customPrompts[index]
             });
             if (result?.data) {
                 const { body, subject } = result.data;
@@ -376,6 +431,109 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
                     variant="outlined"
                     className="bg-white"
                 />
+            </div>
+
+            <div className="mt-6 border-t border-gray-200 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                        <DocumentTextIcon className="h-5 w-5 text-blue-600" />
+                        <h3 className="text-lg font-medium text-gray-700">Custom Prompts</h3>
+                    </div>
+                    <Button
+                        onClick={() => setShowPromptForm(true)}
+                        className="text-blue-600 hover:text-blue-700 text-sm"
+                        startIcon={<PlusIcon className="h-4 w-4" />}
+                    >
+                        Add Prompt
+                    </Button>
+                </div>
+
+                {showPromptForm && (
+                    <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="flex flex-col gap-3">
+                            <TextField
+                                fullWidth
+                                label="Prompt Name"
+                                value={newPrompt.name}
+                                onChange={(e) => setNewPrompt({ ...newPrompt, name: e.target.value })}
+                                size="small"
+                                className="bg-white"
+                            />
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={3}
+                                label="Prompt Content"
+                                value={newPrompt.content}
+                                onChange={(e) => setNewPrompt({ ...newPrompt, content: e.target.value })}
+                                className="bg-white"
+                            />
+                            <div className="flex justify-end gap-2">
+                                <Button
+                                    onClick={() => {
+                                        setShowPromptForm(false);
+                                        setNewPrompt({ name: '', content: '' });
+                                    }}
+                                    variant="outlined"
+                                    color="inherit"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleAddPrompt}
+                                    variant="contained"
+                                    color="primary"
+                                    disabled={!newPrompt.name || !newPrompt.content}
+                                >
+                                    Save Prompt
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Prompts List */}
+                {customPrompts.length > 0 ? (
+                    <div className="space-y-3">
+                        {customPrompts.map((prompt, index) => (
+                            <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h4 className="font-medium text-gray-700">{prompt.name}</h4>
+                                        <p className="text-gray-600 mt-1 text-sm">{prompt.content}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <IconButton
+                                            onClick={() => handleApplyPrompt(index)}
+                                            size="small"
+                                            className="text-gray-500 hover:text-green-600"
+                                        >
+                                            <PlayIcon className="h-4 w-4" />
+                                        </IconButton>
+                                        <IconButton
+                                            onClick={() => handleEditPrompt(index)}
+                                            size="small"
+                                            className="text-gray-500 hover:text-blue-600"
+                                        >
+                                            <PencilIcon className="h-4 w-4" />
+                                        </IconButton>
+                                        <IconButton
+                                            onClick={() => handleDeletePrompt(index)}
+                                            size="small"
+                                            className="text-gray-500 hover:text-red-600"
+                                        >
+                                            <TrashIcon className="h-4 w-4" />
+                                        </IconButton>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-6 text-gray-500">
+                        No custom prompts added yet
+                    </div>
+                )}
             </div>
         </div>
     );

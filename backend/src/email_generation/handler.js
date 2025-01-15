@@ -78,6 +78,30 @@ class EmailGenerationHandler {
         }
     }
 
+    async updatePromptTemplate(req, res){
+        try{
+            const {params} = req;
+            const {email} = params;
+
+            const { data } = req.body;
+
+            console.log(data)
+
+            const response = await service.getTemplateForRecipient(email);
+            console.log(response)
+            const updateResponse = await service.updateTemplateForRecipient(response?.promptTemplateId, data)
+
+
+
+            res.status(200).json({
+                message: "Prompt template updated successfully",
+                data: updateResponse
+            });
+        } catch(error){
+
+        }
+    }
+
 }
 
 export default EmailGenerationHandler;

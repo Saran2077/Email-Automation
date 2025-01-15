@@ -146,7 +146,7 @@ const buildStageTemplate = (stage) => {
     `;
 };
 
-export const getPromptForStage = ({ stage, contextData, customContext, aiPrompt = '', customInstructions = '' }) => {
+export const getPromptForStage = ({ stage, contextData, customContext, customPrompt=null, aiPrompt = '', customInstructions = '' }) => {
     // Deep clone the contextData to avoid mutations
     let finalContext = JSON.parse(JSON.stringify(contextData));
     
@@ -154,18 +154,21 @@ export const getPromptForStage = ({ stage, contextData, customContext, aiPrompt 
         finalContext = mergeCustomContext(finalContext, customContext);
     }
 
+    console.log(finalContext)
+    console.log(customContext)
+
     const baseContext = buildBaseContext(finalContext);
     const stageTemplate = buildStageTemplate(stage);
     const defaultPrompt = `
-        1. Include our website link naturally: https://adya.ai
-        2. Add appropriate spacing and paragraphs
-        3. Include a professional email signature
-        4. Ensure mobile-friendly formatting
+        1. Include the company website link naturally: https://adya.ai
+        2. Use appropriate spacing and clear paragraph formatting for readability.
+        3. Add a professional email signature with the sender's name, title, and company name.
+        4. Ensure the email is mobile-friendly with concise, valid HTML formatting.
         ${customInstructions ? `\nAdditional Instructions:\n${customInstructions}` : ''}
     `;
 
     return `
-        ${stageTemplate}
+        ${customPrompt ? customPrompt?.content : stageTemplate}
 
         ${baseContext}
 
@@ -173,15 +176,15 @@ export const getPromptForStage = ({ stage, contextData, customContext, aiPrompt 
         ${defaultPrompt}
 
         General Requirements:
-        1. Make it sound natural and professional. Format the email body in valid HTML. 
-        2. Return only a valid JSON string with format:
+        1. The email should be natural, professional, and engaging, with no placeholders or templated words like [signature] or [name]. Format the email body in valid HTML.
+        2. Return only a valid JSON string with this structure:
         {
             "subject": "Compelling subject line",
             "body": "HTML formatted email body"
         }
-        3. Keep it short and concise.
-        4. Use the company name and website in the email naturally.
-        5. No need of explanations return only json.
+        3. Keep the email short, concise, and impactful.
+        4. Use the company name and website naturally within the email body.
+        5. Do not include any explanations or additional output—return only the JSON.
     `;
 };
 

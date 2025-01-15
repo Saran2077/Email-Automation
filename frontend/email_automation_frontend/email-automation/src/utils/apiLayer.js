@@ -277,6 +277,16 @@ export const promptAPI = {
         }
     },
 
+    updatePromptTemplate: async (recipientEmail, data) => {
+      try {
+        const response = await api.post(`/v1/email_generation/update_prompt_template/${recipientEmail}`, data);
+        return response.data;
+    } catch (error) {
+        console.error('Error generating email:', error);
+        throw error;
+    }
+    },
+
     generateEmail: async (toEmail, customContext) => {
         try {
             const response = await api.post('/v1/email_generation/generate_email_with_ai', {

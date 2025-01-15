@@ -11,6 +11,10 @@ const emailSchema = new mongoose.Schema({
     // required: true,
     trim: true
   },
+  messageId: {
+    type: String,
+    unique: true
+  },
   body: {
     type: String,
     // required: true
@@ -26,10 +30,10 @@ const emailSchema = new mongoose.Schema({
     required: true
   },
   status: {
-    type: String,
-    enum: ['draft', 'sent', 'delivered', 'opened', 'clicked', 'bounced', 'unopened'],
-    default: 'draft'
-  },
+    type: [String],
+    enum: ['delivered', 'accepted', 'complaints', 'unsubscribes', 'opened', 'clicked', 'hard-bounced', 'soft-bounced', 'unopened'],
+    default: []
+  },  
   isStarred: {
     type: Boolean,
     default: false
@@ -39,6 +43,10 @@ const emailSchema = new mongoose.Schema({
     default: false
   },
   isSent: {
+    type: Boolean,
+    default: false
+  },
+  isFailed: {
     type: Boolean,
     default: false
   },

@@ -9,5 +9,6 @@ router.post('/generate_email', handler.generateEmail);
 router.post('/generate_email_with_ai', handler.generateEmailWithAI);
 router.post('/prompt_template_creation', handler.promptTemplateCreation);
 router.get('/get_prompt_template/:email', handler.getPromptTemplate);
+router.post('/update_prompt_template/:email', handler.updatePromptTemplate);
 
 export default router;

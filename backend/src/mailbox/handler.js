@@ -88,15 +88,15 @@ class MailboxHandler {
             
             // Send email using external service
             const emailSendResp = await sendMail(req.body);
-            console.log("emailSendResp===>", emailSendResp);
+            console.log("emailSendResp===>", emailSendResp, from);
 
             // Update or create email in database
-            const storeSentMail = await service.sendEmail(emailId, subject, body, to, from);
+            const storeSentMail = await service.sendEmail(emailId, subject, body, to, from, emailSendResp);
 
             res.status(200).json({
                 success: true,
                 message: "Email sent!",
-                data: storeSentMail
+                // data: storeSentMail
             });
 
         } catch (error) {

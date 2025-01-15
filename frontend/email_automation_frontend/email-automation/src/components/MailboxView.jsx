@@ -408,7 +408,7 @@ function MailboxView() {
         subject: email.subject,
         body: plainTextToHtml(email.body),
         to: email.to,
-        from: "postmaster@sandboxed091eb00b0a47fa91a3c0113be24b39.mailgun.org"
+        from: "betagamer580@gmail.com"
       };
 
       const response = await mailboxAPI.sendEmail(emailData);
@@ -494,7 +494,7 @@ function MailboxView() {
         subject: newEmail.subject,
         body: plainTextToHtml(newEmail.body),
         to: newEmail.to,
-        from: "postmaster@sandboxed091eb00b0a47fa91a3c0113be24b39.mailgun.org"
+        from: "betagamer580@gmail.com"
       };
 
       const response = await mailboxAPI.sendEmail(emailData);
@@ -821,7 +821,7 @@ function MailboxView() {
               <div className="mt-4 flex flex-col h-[300px] relative">
                 <textarea 
                   className="w-full h-full outline-none text-sm resize-none p-2"
-                  value={htmlToPlainText(editedEmail.body)}
+                  value={editedEmail.body}
                   onChange={(e) => {
                     handleInputChange('body', e.target.value);
                     if (formErrors.body) {
@@ -836,8 +836,8 @@ function MailboxView() {
 
                 <EmailComposerModal 
                   recipientEmail={editedEmail.to}
-                  onUpdateBody={(newBody) => handleComposeInputChange('body', newBody)}
-                  onUpdateSubject={(newSubject) => handleComposeInputChange('subject', newSubject)}
+                  onUpdateBody={(newBody) => handleInputChange('body', newBody)}
+                  onUpdateSubject={(newSubject) => handleInputChange('subject', newSubject)}
                 />
 
               </div>

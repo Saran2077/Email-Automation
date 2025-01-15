@@ -13,14 +13,14 @@ class EmailGenerationService {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    model: "codellama",
+                    model: "codellama:7b",
                     prompt: prompt,
                     stream: false
                 })
             });
     
             const data = await response.json();
-            return data.response;
+            return data?.response;
         } catch (error) {
             console.error('Error calling Ollama:', error);
             throw error;
@@ -71,11 +71,18 @@ class EmailGenerationService {
             let contextData = null;
             let stage = 'CONTACT';
             let customInstructions = '';
+            let customPrompt;
 
             // Extract custom instructions if provided
             if (customContext?.customInstructions) {
                 customInstructions = customContext.customInstructions;
                 delete customContext.customInstructions; // Remove from context to avoid confusion
+            }
+
+            // Extract custom instructions if provided
+            if (customContext?.customPrompt) {
+                customPrompt = customContext.customPrompt;
+                delete customContext.customPrompt; // Remove from context to avoid confusion
             }
 
             // Always get base context first
@@ -105,6 +112,7 @@ class EmailGenerationService {
             const payload = {
                 stage,
                 contextData,
+                customPrompt,
                 customContext: customContext ? {
                     senderCompanyContext: customContext.senderCompanyContext || {},
                     targetCompanyContext: customContext.targetCompanyContext || {},
@@ -128,8 +136,6 @@ class EmailGenerationService {
 
             var email = await this.callOllama(prompt)
             console.log("Email: ", email); 
-            email = email.replaceAll('`', '').slice(4, -1);
-            console.log("Email: ", email)
 
             // const email = response.choices[0].message.content;
             
@@ -236,6 +242,16 @@ class EmailGenerationService {
         try{
             const template = await PromptTemplateRepository.getByEmail(recipientEmail);
             return template;
+        } catch(error){
+            console.log("Service error in getting prompt template: ", error);
+            throw error;
+        }
+    }
+
+    async updateTemplateForRecipient(templateId, data) {
+        try{
+            const updateTemplate = await PromptTemplateRepository.update(templateId, data)
+            return updateTemplate;
         } catch(error){
             console.log("Service error in getting prompt template: ", error);
             throw error;

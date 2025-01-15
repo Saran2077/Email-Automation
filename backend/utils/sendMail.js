@@ -6,8 +6,9 @@ export const sendMail = async (emailData) => {
     const to = emailData.to;
 
     // Create a FormData instance
+    console.log(emailData)
     const form = new FormData();
-    form.append('from', "Saran <postmaster@sandboxed091eb00b0a47fa91a3c0113be24b39.mailgun.org>");
+    form.append('from', `Saran <${emailData?.from}>`);
     form.append('to', "saranmuthuraj2004@gmail.com");
     form.append('subject', subject);
     form.append('html', body);
