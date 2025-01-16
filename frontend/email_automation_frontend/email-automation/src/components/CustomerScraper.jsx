@@ -166,10 +166,10 @@ function CustomerScraper() {
         if (!customer) {
           throw new Error('Invalid customer data')
         }
-        console.log(customer);
+
         const payload = prepareRecipientPayload(customer, {
           name: customer.name,
-          email: customer.email || `user${Math.floor(Math.random() * 10000)}@gmail.com`,
+          email: customer.email,
           designation: customer.designation,
           profileLinks: customer.profileLinks,
           shortBio: customer.shortBio

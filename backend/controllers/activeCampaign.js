@@ -158,120 +158,52 @@ async function handleAddContact(req, res) {
 
 async function handleContactBulkUpload(req, res) {
   try {
-    // Input validation
     const { list_id, data } = req.body;
-    if (!list_id) {
-      return res.status(400).json({
-        meta: {
-          status: false,
-          message: "Missing required parameter: list_id"
-        }
-      });
-    }
-    
-    if (!Array.isArray(data) || data.length === 0) {
-      return res.status(400).json({
-        meta: {
-          status: false,
-          message: "Data must be a non-empty array of companies"
-        }
-      });
-    }
-
     const employeeData = [];
-    const errors = [];
 
-    for (const [companyIndex, company] of data.entries()) {
-      try {
-        // Validate company data
-        if (!company.Name) {
-          errors.push(`Company at index ${companyIndex}: Missing required field 'Name'`);
-          continue;
+    for (let company of data) {
+      const resp = await createAccount({
+        account: {
+            owner: 1,
+            name: company.Name,
+            accountUrl: company.Domain,
+            fields: [
+                { customFieldId: "1", fieldValue: company.Description },
+                { customFieldId: "14", fieldValue: company.LinkedIn_URL },
+                { customFieldId: "15", fieldValue: company.Business_Models },
+                { customFieldId: "16", fieldValue: company.Primary_Industry }
+            ]
         }
+      });
+      const companyId = resp.account?.id || "";
 
-        // Create account with error handling
-        let companyId;
-        try {
-          const resp = await createAccount({
-            account: {
-              owner: 1,
-              name: company.Name,
-              accountUrl: company.Domain || '',
-              fields: [
-                { customFieldId: "1", fieldValue: company.Description || '' },
-                { customFieldId: "14", fieldValue: company.LinkedIn_URL || '' },
-                { customFieldId: "15", fieldValue: company.Business_Models || '' },
-                { customFieldId: "16", fieldValue: company.Primary_Industry || '' }
-              ]
-            }
-          });
-          companyId = resp.account?.id;
-          if (!companyId) {
-            errors.push(`Failed to create account for company: ${company.Name}`);
-            // continue;
-          }
-        } catch (err) {
-          errors.push(`Error creating account for ${company.Name}: ${err.message}`);
-          // continue;
-        }
-
-        // Process employees
-        if (!Array.isArray(company.Employee_List)) {
-          errors.push(`Company ${company.Name}: Employee_List must be an array`);
-          continue;
-        }
-
-        console.log("employee".company.Employee_List)
-
-        for (const [employeeIndex, employee] of company.Employee_List.entries()) {
-          try {
-            if (!employee.name) {
-              errors.push(`Company ${company.Name}, Employee ${employeeIndex}: Missing required field 'name'`);
-              continue;
-            }
-
-            const primaryEmail = employee.emailInfo?.primaryEmail || 
-                               employee.email || 
-                               `user${Math.floor(Math.random() * 10000)}@gmail.com`;
-
-            const firstName = employee.name?.split(" ")[0] || '';
-            const lastName = employee.name?.split(" ").slice(1).join(" ") || '';
-
-            employeeData.push({
-              email: primaryEmail,
-              first_name: firstName,
-              last_name: lastName,
-              customer_acct_name: company.Name,
-              fields: [
+      for (const employee of company.Employee_List || []) {
+        const primaryEmail = `user${Math.floor(Math.random() * 10000)}@gmail.com` || employee.emailInfo?.primaryEmail || '';
+        console.log('Employee Info', {
+            email: employee.emailInfo?.primaryEmail,
+            firstName: employee.name?.replace(" ", "") || '',
+            lastName: "",
+            fieldValues: [
+                { field: "1", value: employee.profileLinks?.linkedinHandle || '' }
+            ]
+        });
+        employeeData.push({
+            email: primaryEmail,
+            first_name: employee.name?.replace(" ", "") || '',
+            last_name: "",
+            customer_acct_name: company?.Name,
+            fields: [
                 { id: 2, value: employee.profileLinks?.linkedinHandle || '' }
-              ],
-              subscribe: [
-                { "listid": list_id }
-              ]
-            });
-          } catch (err) {
-            errors.push(`Error processing employee ${employeeIndex} for company ${company.Name}: ${err.message}`);
-          }
-        }
-      } catch (err) {
-        errors.push(`Error processing company ${company.Name}: ${err.message}`);
+            ],
+            subscribe: [
+              { "listid": list_id },
+            ]
+        });
       }
     }
 
-    // Handle case where no valid employees were processed
-    if (employeeData.length === 0) {
-      return res.status(400).json({
-        meta: {
-          status: false,
-          message: "No valid employee data to process",
-          errors
-        }
-      });
-    }
-
-    // Perform bulk import with error handling
-    try {
-      const bulkUpload = await bulkImportContacts({
+    if (employeeData.length > 0) {
+      console.log("Bulk Importing Contacts...", {
         contacts: employeeData,
         callback: {
           requestType: "POST",
@@ -280,33 +212,31 @@ async function handleContactBulkUpload(req, res) {
         }
       });
 
-      return res.status(200).json({
-        meta: {
-          status: true,
-          message: "Bulk upload completed successfully",
-          totalProcessed: employeeData.length,
-          warnings: errors.length > 0 ? errors : undefined
-        }
-      });
-    } catch (err) {
-      return res.status(500).json({
-        meta: {
-          status: false,
-          message: "Bulk import failed",
-          error: err.message,
-          warnings: errors
+      const bulkUpload = await bulkImportContacts({
+        contacts: employeeData,
+        callback: {
+          requestType: "POST",
+          detailed_results: "true",
+          url: "www.google.com"
         }
       });
     }
+
+    console.log("Bulk Upload completed");
+    return res.status(200).json({ 
+      meta: {
+        status: true,
+        message: "Bulk Upload completed successfully"
+      },
+     });
   } catch (error) {
-    console.error("Fatal error in handleContactBulkUpload:", error);
+    console.log(`Error in handleContactBulk: ${error}`);
     return res.status(500).json({
       meta: {
         status: false,
-        message: "Internal server error",
-        error: error.message
-      }
-    });
+        message: error.message
+      },
+      });
   }
 }
 
