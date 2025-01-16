@@ -184,10 +184,10 @@ class EmailGenerationService {
         return await PromptTemplateRepository.create(templateData);
     }
 
-    async promptTemplateCreation() {
+    async promptTemplateCreation(recipientIds, payload) {
         try {
             // 1. Get all recipients
-            const recipients = await RecipientRepository.list();
+            const recipients = await RecipientRepository.list({ recipientIds: { $in: recipientIds } });
             
             // 2. Create templates for each recipient
             const templatePromises = recipients.recipients.map(async (recipient) => {
@@ -195,10 +195,10 @@ class EmailGenerationService {
                     recipientEmail: recipient.email,
                     stage: recipient.stage,
                     senderCompanyContext: {
-                        companyName: "Adya",
-                        companyDescription: process.env.COMPANY_DESCRIPTION || "",
-                        companyWebsite: "https://adya.ai",
-                        productAndServices: process.env.PRODUCT_AND_SERVICES || ""
+                        companyName: payload.senderCompanyContext.companyName || "Adya",
+                        companyDescription: payload.senderCompanyContext.companyDescription || "",
+                        companyWebsite: payload.senderCompanyContext.companyWebsite || "https://adya.ai",
+                        productAndServices: payload.senderCompanyContext.productAndServices || ""
                     },
                     targetCompanyContext: {
                         companyName: recipient.company,
@@ -211,16 +211,19 @@ class EmailGenerationService {
                         shortBio: recipient.shortBio
                     },
                     senderContext: {
-                        name: process.env.SENDER_NAME || "Saran M",
-                        designation: process.env.SENDER_DESIGNATION || "Chief of Communications",
-                        companyName: "Adya"
-                    }
+                        name: payload.senderContext.name || "Saran M",
+                        designation: payload.senderContext.designation || "Chief of Communications",
+                        companyName: payload.senderContext.companyName || "Adya"
+                    },
+                    customPrompt: payload.customPrompt || [],
+                    customInstructions: payload.customInstructions || ""
                 };
 
                 // Create template
                 const template = await PromptTemplateRepository.create(templateData);
 
-                    
+                console.log("Template created: ", template);
+
                 return template;
             });
 

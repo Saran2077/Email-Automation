@@ -2,9 +2,11 @@ import EmailRepository from "../../utils/repository/Email.js";
 import DashboardService from "../dashboard/service.js";
 import { getAllCustomFields, getContactsData, updateContact } from "../services/activeCampaign.js";
 import RecipientService from "./service.js";
+import EmailGenerationService from "../email_generation/service.js";
 
 const recipientService = new RecipientService();
 const emailService = new EmailRepository();
+const emailGenerationService = new EmailGenerationService();
 
 class RecipientHandler {
     
@@ -157,7 +159,7 @@ class RecipientHandler {
 
     async bulkCreateRecipients(req, res, next) {
         try {
-            const { recipients } = req.body;
+            const { recipients, template } = req.body;
             
             if (!Array.isArray(recipients)) {
                 throw new Error('Recipients must be an array');
@@ -168,6 +170,11 @@ class RecipientHandler {
             }
 
             const createdRecipients = await recipientService.bulkCreateRecipients(recipients);
+
+            //from created recipients iterate over each recipient and store the recipientId in one variable
+            const recipientIds = createdRecipients.map(recipient => recipient.id);
+            const promptTemplateCreation = await emailGenerationService.promptTemplateCreation(recipientIds, template);
+            console.log(promptTemplateCreation);
             res.status(201).json(createdRecipients);
         } catch (error) {
             console.error('Bulk create error:', error);

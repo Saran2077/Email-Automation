@@ -122,19 +122,23 @@ recipientSchema.statics.bulkCreateRecipients = async function(recipientsData) {
   session.startTransaction();
 
   try {
-    const recipients = [];
-    
     // Get the current counter value
-    let counter = await Counter.findById('recipientId').session(session) || { seq: 0 };
+    let counter = await Counter.findById('recipientId').session(session);
     
-    // Prepare all recipients with incremented IDs
-    for (const data of recipientsData) {
+    // Initialize counter if it doesn't exist
+    if (!counter) {
+      counter = await Counter.create([{ _id: 'recipientId', seq: 0 }], { session });
+      counter = counter[0];
+    }
+    
+    // Prepare recipients with sequential IDs
+    const recipients = await Promise.all(recipientsData.map(async (data) => {
       counter.seq += 1;
-      recipients.push(new this({
+      return {
         ...data,
         recipientId: counter.seq
-      }));
-    }
+      };
+    }));
 
     // Update the counter
     await Counter.findByIdAndUpdate(
@@ -150,7 +154,7 @@ recipientSchema.statics.bulkCreateRecipients = async function(recipientsData) {
     return savedRecipients;
   } catch (error) {
     await session.abortTransaction();
-    throw new Error(`Error in bulk creating recipients: ${error.message}`);
+    throw error;
   } finally {
     session.endSession();
   }

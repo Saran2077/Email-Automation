@@ -29,53 +29,81 @@ function CustomerScraper() {
   });
 
   useEffect(() => {
-    const fetchCustomers = async () => {
-      setLoading(true)
+    const loadCustomers = async () => {
+      setLoading(true);
       try {
-        const response = await scrapAPI.fetchCustomers({ filter: filters, from: (currentPage - 1) * 20})
-        if (!response?.data) {
-          throw new Error('No data received from scraping')
-        }
-        setCustomers(response)
-      } catch (error) {
-        console.error('Error in useEffect:', error)
-        toast.error(error.message || 'Failed to fetch customer data')
-        setCustomers({})
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchCustomers();
-  }, [currentPage])
+        // For first page, check cache first
+        if (currentPage === 1) {
+          const cachedData = localStorage.getItem('scrapedCustomers');
+          const lastFetchTime = localStorage.getItem('lastScrapFetchTime');
+          const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
 
-// const handleApplyFilters = (newFilters) => {
-//   console.log("NEW FILTERS", newFilters)
-//   setFilters(newFilters);
-//   setShowFilterModal(false);
-// };
+          // Use cached data if available and fresh
+          if (cachedData && lastFetchTime && (Date.now() - parseInt(lastFetchTime) < ONE_HOUR)) {
+            const parsedData = JSON.parse(cachedData);
+            setCustomers(parsedData);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Make API call for pagination or if cache is expired/empty
+        const response = await scrapAPI.fetchCustomers({ 
+          filter: filters,
+          from: (currentPage - 1) * 20
+        });
+
+        if (!response?.data) {
+          throw new Error('No data received from scraping');
+        }
+
+        // Only cache first page data
+        if (currentPage === 1) {
+          localStorage.setItem('scrapedCustomers', JSON.stringify(response));
+          localStorage.setItem('lastScrapFetchTime', Date.now().toString());
+        }
+        
+        setCustomers(response);
+      } catch (error) {
+        console.error('Error in useEffect:', error);
+        toast.error(error.message || 'Failed to fetch customer data');
+        setCustomers({});
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCustomers();
+  }, [currentPage, filters]);
 
   const handleScrapeData = async () => {
-    setShowFilterModal(true)
-  }
+    setShowFilterModal(true);
+  };
 
   const handleApplyFilters = async (selectedFilters) => {
-    setFilters(selectedFilters)
-    setLoading(true)
+    setFilters(selectedFilters);
+    setCurrentPage(1); // Reset to first page when applying filters
+    setLoading(true);
     try {
-      const response = await scrapAPI.fetchCustomers({filter: selectedFilters})
+      const response = await scrapAPI.fetchCustomers({ filter: selectedFilters });
       if (!response?.data) {
-        throw new Error('No data received from scraping')
+        throw new Error('No data received from scraping');
       }
-      setCustomers(response)
-      setShowFilterModal(false)
+      
+      // Cache the first page of filtered data
+      localStorage.setItem('scrapedCustomers', JSON.stringify(response));
+      localStorage.setItem('lastScrapFetchTime', Date.now().toString());
+      
+      setCustomers(response);
+      setShowFilterModal(false);
     } catch (error) {
-      console.error('Error in handleScrapeData:', error)
-      toast.error(error.message || 'Failed to fetch customer data')
-      setCustomers({})
+      console.error('Error in handleScrapeData:', error);
+      toast.error(error.message || 'Failed to fetch customer data');
+      setCustomers({});
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSelectCustomer = (customer) => {
     setSelectedCustomers(prev => 

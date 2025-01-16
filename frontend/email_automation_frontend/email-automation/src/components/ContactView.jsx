@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Linkedin, Building2, User, Briefcase, Calendar, MessageSquare, Trophy, TrendingUp, SaveIcon, Inbox, Send, Edit } from 'lucide-react';
+import { Mail, Linkedin, Building2, User, Briefcase, Calendar, MessageSquare, Trophy, TrendingUp, Inbox, Send, Edit, SaveIcon } from 'lucide-react';
 import TextArea from 'antd/es/input/TextArea';
 import { recipientAPI } from '../utils/apiLayer';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronDownIcon, ChevronUpIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, ChevronDownIcon, ChevronUpIcon  } from '@heroicons/react/24/outline';
 
 export default function ContactView() {
   const [stage, setStage] = useState(null);
