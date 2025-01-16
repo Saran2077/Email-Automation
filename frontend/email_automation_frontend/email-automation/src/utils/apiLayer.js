@@ -96,6 +96,14 @@ export const scrapAPI = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+  fetchFilteredCustomers: async (prompt) => {
+    try {
+      const response = await api.post('/scrap/prompt', { prompt });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 }
 ;

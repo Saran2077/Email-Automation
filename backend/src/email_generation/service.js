@@ -13,7 +13,7 @@ class EmailGenerationService {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    model: "codellama:7b",
+                    model: "llama2",
                     prompt: prompt,
                     stream: false
                 })

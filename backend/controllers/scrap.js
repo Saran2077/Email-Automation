@@ -2,6 +2,7 @@
 
 import { createAccount, createContact, createContactAssociation } from '../src/services/activeCampaign.js'; // Adjust the import path as necessary
 import fs from 'fs';
+import XLSX from 'xlsx';
 
 const baseUrl = 'https://platform.tracxn.com/api/2.2/playground';
 
@@ -199,7 +200,72 @@ const fetchCompaniesList = async(filters={}) => {
     }
 }
 
+const fetchFilteredCompanies = async(req, res) => {
+    try {
+        const { prompt } = req.body;
+        if (!prompt) {
+            return res.status(400).json({ error: "Prompt is required" });
+        }
+        const baseUrl = 'https://9c64-2001-4490-4e81-e973-382b-803c-7835-a17.ngrok-free.app'
+        const endpoint = `${baseUrl}/process_query`;
+
+        console.log({ query: prompt }, endpoint)
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json' // Ensure the server knows the content type
+            },
+            body: JSON.stringify({ query: prompt }) // Stringify the JSON payload
+        });
+
+        console.log("RESP", response);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status},  statusText: ${response.statusText}`);
+        }
+
+        const data = await response.json()
+        console.log(data)
+
+        if (data?.status === "success") {
+            const employeeId = data?.result?.employeeId;
+            let workbook;
+
+            workbook = XLSX.readFile('tracxn_output.xlsx');
+
+
+            // Get the worksheet name
+            const sheetName = 'Tracxn Data';
+
+            let worksheet;
+            if (workbook.Sheets[sheetName]) {
+                worksheet = workbook.Sheets[sheetName];
+
+                const existingData = XLSX.utils.sheet_to_json(worksheet);
+                const filteredData = existingData?.filter((datas) => employeeId.includes(datas?.id))
+                return res.status(200).json(filteredData)
+
+        } else {
+            // Create new worksheet if it doesn't exist
+            // worksheet = XLSX.utils.json_to_sheet(tracxnData);
+        }
+
+        // Update/add the worksheet in the workbook
+        workbook.Sheets[sheetName] = worksheet;
+
+        // Write the updated workbook to file
+        XLSX.writeFile(workbook, outputPath);
+        }
+        
+        return data;
+    } catch (error) {
+        console.error(`Error fetching filtered company list: ${error.message}`);
+        return null;
+    }
+}
 
 
 
-export { fetchAllCompanies };
+
+export { fetchAllCompanies, fetchFilteredCompanies };

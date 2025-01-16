@@ -225,6 +225,7 @@ function CustomerScraper() {
           onClose={() => setShowFilterModal(false)}
           initialFilters={filters}
           visible={showFilterModal}
+          setCustomers={setCustomers}
         />
       )}
 
@@ -274,12 +275,12 @@ function CustomerScraper() {
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">{employee?.name || "--"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{employee?.shortBio || "--"}</td>
+                    <td className="px-6 py-4 min-w-96 break-words">{employee?.shortBio || "--"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{employee?.designation || "--"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{employee?.email || "--"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{employee?.profileLinks?.linkedinHandle || "--"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{company?.Name || "--"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{company?.Description || "--"}</td>
+                    <td className="px-6 py-4 min-w-96 break-words">{company?.Description || "--"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{company?.Domain || "--"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{company?.LinkedIn_URL || "--"}</td>
                   </tr>

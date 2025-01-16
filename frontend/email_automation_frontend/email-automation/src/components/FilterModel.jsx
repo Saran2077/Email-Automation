@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Input, Button, Tag, Card, Space, Typography } from 'antd';
 import { MessageOutlined, PlusOutlined, SearchOutlined, CloseOutlined, FilterOutlined } from '@ant-design/icons';
+import { scrapAPI } from '../utils/apiLayer';
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
 
-const FilterModal = ({ onApply, onClose, initialFilters = {}, visible = false }) => {
+const FilterModal = ({ onApply, onClose, initialFilters = {}, visible = false, setCustomers }) => {
   const [isPromptOpen, setIsPromptOpen] = useState(false);
   const [promptInput, setPromptInput] = useState('');
   const [filters, setFilters] = useState({
@@ -54,23 +55,43 @@ const FilterModal = ({ onApply, onClose, initialFilters = {}, visible = false })
     }));
   };
 
-  const handlePromptSubmit = () => {
-    const keywords = promptInput.split(' ').filter(k => k.length > 2);
-    
-    keywords.forEach(keyword => {
-      if (keyword.match(/\d{4}/)) {
-        setFilters(prev => ({
-          ...prev,
-          foundedYear: [...prev.foundedYear, keyword]
-        }));
-      } else {
-        setFilters(prev => ({
-          ...prev,
-          practiceArea: [...prev.practiceArea, keyword]
-        }));
+  const handlePromptSubmit = async() => {
+    const response = await scrapAPI.fetchFilteredCustomers(promptInput);
+    console.log("response", response);
+    const newCampaignId = Object.values(response.reduce((acc, customer) => {
+      const key = customer.name;
+      if (!acc[key]) {
+        acc[key] = {
+          Name: customer.name,
+          Description: customer.description,
+          Primary_Industry: customer.primaryIndustry,
+          Business_Models: customer.businessModels,
+          Domain: customer.domain,
+          LinkedIn_URL: customer.linkedInURL,
+          // Annual_Revenue: customer.Annual_Revenue,
+          Employee_List: []
+        };
       }
-    });
-    
+      acc[key].Employee_List.push({
+        designation: customer.employeeDesignation,
+        id: customer.id,
+        name: customer.employeeName,
+
+        profileLinks: {profileLinks: customer?.employeeLinkedIn },
+        shortBio: customer.short_bio,
+        isKeyPeople: customer.employeeKeyPeople,
+        isFoundingMember: customer.employeeFoundingMember,
+      });
+      return acc;
+    }, {}))
+
+    setCustomers({
+      meta: {
+        total_rows: 0,
+      },
+      data: newCampaignId
+    })
+
     setIsPromptOpen(false);
     setPromptInput('');
   };

@@ -128,7 +128,7 @@ export function appendIdToTracxnData(outputPath) {
     }
 }
 
-appendIdToTracxnData('tracxn_output.xlsx')
+// appendIdToTracxnData('tracxn_output.xlsx')
 
 const extractRequiredFields = (companyData) => {
     /**
@@ -206,41 +206,41 @@ const fetchCompaniesList = async(filters={}) => {
         return null;
     }
 }
-var from = 400;
+var from = 800;
 
-// while (true) {
+while (true) {
 
-//     const companiesList = await fetchCompaniesList({ from: from });
-//     const tracxnData = []
+    const companiesList = await fetchCompaniesList({ from: from });
+    const tracxnData = []
     
-//     for (const company of companiesList?.result || []) {
-//         const processedData = extractRequiredFields(company);
-//         const employees = processedData?.employeeList?.map((employee) => {
-//             const { employeeList, ...rest } = processedData; 
-//             return {
-//               ...{
-//                 employeeName: employee?.name,
-//                 short_bio: employee?.shortBio,
-//                 employeeLinkedIn: employee?.profileLinks?.linkedinHandle,
-//                 employeeDesignation: employee?.designation,
-//                 employeeKeyPeople: employee?.isKeyPeople,
-//                 employeeFoundingMember: employee?.isFoundingMember,
-//               },
-//               ...rest,
-//             };
-//           });
+    for (const company of companiesList?.result || []) {
+        const processedData = extractRequiredFields(company);
+        const employees = processedData?.employeeList?.map((employee) => {
+            const { employeeList, ...rest } = processedData; 
+            return {
+              ...{
+                employeeName: employee?.name,
+                short_bio: employee?.shortBio,
+                employeeLinkedIn: employee?.profileLinks?.linkedinHandle,
+                employeeDesignation: employee?.designation,
+                employeeKeyPeople: employee?.isKeyPeople,
+                employeeFoundingMember: employee?.isFoundingMember,
+              },
+              ...rest,
+            };
+          });
           
-//         if (employees.length > 0) {
-//             tracxnData.push(...employees);
-//         }
-//     }
-//     if (tracxnData.length > 0) {
-//         appendTracxnToExcel(tracxnData, "tracxn_output.xlsx")
-//     }
+        if (employees.length > 0) {
+            tracxnData.push(...employees);
+        }
+    }
+    if (tracxnData.length > 0) {
+        appendTracxnToExcel(tracxnData, "tracxn_output.xlsx")
+    }
 
-//     if (!companiesList?.result?.length) break;
-//     from += 20
-// }
+    if (!companiesList?.result?.length) break;
+    from += 20
+}
 
 // if (fileURLToPath(import.meta.url) === process.argv[1]) {
 //     const inputFile = process.argv[2];
