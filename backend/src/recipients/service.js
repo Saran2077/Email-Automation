@@ -1,5 +1,7 @@
+import EmailRepository from "../../utils/repository/Email.js";
 import RecipientRepository from "../../utils/repository/Recipient.js";
 
+const emailRepository = new EmailRepository();
 class RecipientService {
     async createRecipient(recipient) {
         return await RecipientRepository.create(recipient);
@@ -29,6 +31,14 @@ class RecipientService {
         return await RecipientRepository.bulkCreate(recipients);
     }
 
+    async getEmailsByRecipient(recipientId) {
+        try {
+            return await emailRepository.getEmailsByRecipient(recipientId);
+        } catch (error) {
+            console.error('Service error in getting emails:', error);
+            throw error;
+        }
+    }
 }
 
 export default RecipientService;

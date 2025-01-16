@@ -175,6 +175,17 @@ class RecipientHandler {
         }
     }
 
+    async getEmailsByRecipient(req, res, next) {
+        try {
+            const { id } = req.params;
+            const emails = await recipientService.getEmailsByRecipient(id);
+            res.status(200).json(emails);
+        } catch (error) {
+            console.error('Error fetching emails by recipient:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
 }
 
 export default RecipientHandler;

@@ -156,4 +156,97 @@ recipientSchema.statics.bulkCreateRecipients = async function(recipientsData) {
   }
 };
 
+// Add these methods to the recipientSchema
+recipientSchema.methods.getEmailHistory = async function() {
+    try {
+        // Populate all email references with relevant fields
+        const recipient = await this.populate([
+            {
+                path: 'emails.sent',
+                select: 'subject body status createdAt messageId isStarred',
+                options: { sort: { createdAt: -1 } }
+            },
+            {
+                path: 'emails.received',
+                select: 'subject body status createdAt messageId isStarred',
+                options: { sort: { createdAt: -1 } }
+            },
+            {
+                path: 'emails.starred',
+                select: 'subject body status createdAt messageId isStarred',
+                options: { sort: { createdAt: -1 } }
+            },
+            {
+                path: 'emails.drafts',
+                select: 'subject body status createdAt messageId isDraft',
+                options: { sort: { createdAt: -1 } }
+            }
+        ]);
+
+        // Combine and format all emails
+        const allEmails = [
+            ...(recipient.emails.sent || []).map(email => ({
+                ...email.toObject(),
+                type: 'sent'
+            })),
+            ...(recipient.emails.received || []).map(email => ({
+                ...email.toObject(),
+                type: 'received'
+            })),
+            ...(recipient.emails.drafts || []).map(email => ({
+                ...email.toObject(),
+                type: 'draft'
+            }))
+        ];
+
+        // Sort by date
+        return allEmails.sort((a, b) => b.createdAt - a.createdAt);
+    } catch (error) {
+        console.error('Error fetching email history:', error);
+        throw error;
+    }
+};
+
+// Static method to get recipient with email history
+recipientSchema.statics.getRecipientWithEmailHistory = async function(recipientId) {
+    try {
+        const recipient = await this.findOne({ recipientId })
+            .populate([
+                {
+                    path: 'emails.sent',
+                    select: 'subject body status createdAt messageId isStarred',
+                    options: { sort: { createdAt: -1 } }
+                },
+                {
+                    path: 'emails.received',
+                    select: 'subject body status createdAt messageId isStarred',
+                    options: { sort: { createdAt: -1 } }
+                },
+                {
+                    path: 'emails.starred',
+                    select: 'subject body status createdAt messageId isStarred',
+                    options: { sort: { createdAt: -1 } }
+                },
+                {
+                    path: 'emails.drafts',
+                    select: 'subject body status createdAt messageId isDraft',
+                    options: { sort: { createdAt: -1 } }
+                }
+            ]);
+
+        if (!recipient) {
+            throw new Error('Recipient not found');
+        }
+
+        const emailHistory = await recipient.getEmailHistory();
+        return {
+            recipient: recipient.toObject(),
+            emailHistory
+        };
+    } catch (error) {
+        console.error('Error fetching recipient with email history:', error);
+        throw error;
+    }
+};
+
 export const Recipient = mongoose.model('Recipient', recipientSchema);

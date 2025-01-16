@@ -71,4 +71,22 @@ emailSchema.pre('save', async function(next) {
   next();
 });
 
+emailSchema.statics.getEmailsByRecipient = async function(recipientId) {
+    try {
+        const emails = await this.find({
+            $or: [
+                { to: recipientId },
+                { from: recipientId }
+            ]
+        })
+        .sort({ createdAt: -1 })
+        .select('subject body status createdAt messageId isStarred isDraft isSent isReceived');
+
+        return emails;
+    } catch (error) {
+        console.error('Error fetching emails by recipient:', error);
+        throw error;
+    }
+};
+
 export const Email = mongoose.model('Email', emailSchema);

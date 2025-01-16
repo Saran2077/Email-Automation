@@ -75,6 +75,16 @@ export const recipientAPI = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  getEmailHistory: async (recipientId) => {
+    try {
+      const response = await api.get(`/v1/recipients/emails/${recipientId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching email history:', error);
+      throw error;
+    }
   }
 };
 

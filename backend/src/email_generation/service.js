@@ -29,25 +29,25 @@ class EmailGenerationService {
 
     async generateEmail(userStage){
         try{
-            // const azureOpenai = new AzureOpenAI({
-            //     apiKey: process.env.AZURE_OPENAI_API_KEY,
-            //     endpoint: process.env.AZURE_OPENAI_ENDPOINT,
-            //     deploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
-            //     apiVersion: "2024-02-01"
-            // });
+            const azureOpenai = new AzureOpenAI({
+                apiKey: process.env.AZURE_OPENAI_API_KEY,
+                endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+                deploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+                apiVersion: "2024-02-01"
+            });
 
             const prompt = getPromptForStage(userStage);
             
-            // const response = await azureOpenai.chat.completions.create({
-            //     messages: [{ role: "system", content: prompt }],
-            //     model: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
-            //     temperature: 0.7,
-            //     max_tokens: 500
-            // });
+            const response = await azureOpenai.chat.completions.create({
+                messages: [{ role: "system", content: prompt }],
+                model: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+                temperature: 0.7,
+                max_tokens: 500
+            });
 
-            const email = await this.callOllama(prompt);
+            // const email = await this.callOllama(prompt);
 
-            // const email = response.choices[0].message.content;
+            const email = response.choices[0].message.content;
             
             console.log("Email generated: ", email);
 
@@ -61,12 +61,12 @@ class EmailGenerationService {
 
     async generateEmailWithAI(toEmail, customContext = null) {
         try {
-            // const azureOpenai = new AzureOpenAI({
-            //     apiKey: process.env.AZURE_OPENAI_API_KEY,
-            //     endpoint: process.env.AZURE_OPENAI_ENDPOINT,
-            //     deploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
-            //     apiVersion: process.env.AZURE_OPENAI_VERSION
-            // });
+            const azureOpenai = new AzureOpenAI({
+                apiKey: process.env.AZURE_OPENAI_API_KEY,
+                endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+                deploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+                apiVersion: process.env.AZURE_OPENAI_VERSION
+            });
 
             let contextData = null;
             let stage = 'CONTACT';
@@ -127,17 +127,17 @@ class EmailGenerationService {
             const prompt = getPromptForStage(payload);
             console.log("Generated Prompt: ", prompt);
 
-            // const response = await azureOpenai.chat.completions.create({
-            //     messages: [{ role: "system", content: prompt }],
-            //     model: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
-            //     temperature: 0.7,
-            //     max_tokens: 500
-            // });
+            const response = await azureOpenai.chat.completions.create({
+                messages: [{ role: "system", content: prompt }],
+                model: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+                temperature: 0.7,
+                max_tokens: 500
+            });
 
-            var email = await this.callOllama(prompt)
-            console.log("Email: ", email); 
+            // var email = await this.callOllama(prompt)
+            // console.log("Email: ", email); 
 
-            // const email = response.choices[0].message.content;
+            const email = response.choices[0].message.content;
             
             try {
                 const parsedEmail = JSON.parse(email);
