@@ -40,7 +40,7 @@ const formatSectionName = (name) => {
     return words.join(' ')
 };
 
-const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, onClose, isBulkCampaign }) => {
+const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, onClose }) => {
     const [templateData, setTemplateData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -78,31 +78,8 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
     };
 
     useEffect(() => {
-        if (isBulkCampaign) {
-            // Initialize empty template structure for bulk campaigns
-            setTemplateData({
-                senderContext: {
-                    name: '',
-                    designation: '',
-                    companyName: '',
-                },
-                senderCompanyContext: {
-                    companyName: '',
-                    companyDescription: '',
-                    companyWebsite: '',
-                    productAndServices: '',
-                },
-                // Skip recipient and company context for bulk campaigns
-            });
-            setExpandedSections({
-                senderContext: true,
-                senderCompanyContext: true,
-            });
-        } else {
-            // Existing logic for fetching template data
-            fetchTemplateData();
-        }
-    }, [recipientEmail, isBulkCampaign]);
+        fetchTemplateData();
+    }, [recipientEmail]);
 
     const fetchTemplateData = async () => {
         try {
@@ -135,19 +112,18 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
             const result = await promptAPI.generateEmail(recipientEmail, {
                 ...templateData,
                 customInstructions,
-                customPrompt: null,
-                isBulkCampaign
+                customPrompt: null
             });
             if (result?.data) {
                 const { body, subject } = result.data;
                 onUpdateBody(body);
                 onUpdateSubject(subject);
-                toast.success('Template generated successfully!');
+                toast.success('Email generated successfully!');
                 onClose();
             }
         } catch (error) {
-            toast.error('Failed to generate template');
-            console.error('Failed to generate template:', error);
+            toast.error('Failed to generate email');
+            console.error('Failed to generate email:', error);
         } finally {
             setLoading(false);
         }
@@ -237,24 +213,6 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
         }
     };
 
-    const handleSaveTemplate = async () => {
-        try {
-            const templatePayload = {
-                senderContext: templateData.senderContext,
-                senderCompanyContext: templateData.senderCompanyContext,
-                customPrompts: customPrompts,
-                customInstructions
-            };
-            
-            onUpdateBody(JSON.stringify(templatePayload));
-            onClose();
-            toast.success('Template saved successfully!');
-        } catch (error) {
-            toast.error('Failed to save template');
-            console.error('Failed to save template:', error);
-        }
-    };
-
     if (loading) return (
         <div className="flex items-center justify-center p-8 ">
             <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center">
@@ -285,7 +243,7 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
     );
 
     return (
-        <div className="bg-white rounded-lg p-6">
+        <div className="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto relative">
             {/* Loading Overlay */}
             {loading && (
                 <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
@@ -309,11 +267,10 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
                     <h2 className="text-xl font-semibold text-gray-800">Email Context Editor</h2>
                 </div>
                 <div className="flex items-center gap-3">
-                    {!isBulkCampaign && (
-                        <Button
-                            variant="contained"
-                            onClick={recipientEmail ? handleGenerateEmail : undefined}
-                            disabled={loading || !recipientEmail}
+                    <Button
+                        variant="contained"
+                        onClick={recipientEmail ? handleGenerateEmail : undefined}
+                        disabled={loading || !recipientEmail}
                         className={`${
                             !recipientEmail 
                             ? 'bg-gray-300 cursor-not-allowed opacity-50' 
@@ -322,10 +279,8 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
                         // startIcon={<CogIcon className="h-5 w-5" />}
                         title={!recipientEmail ? "Please enter recipient email first" : "Generate Email"}
                     >
-                        {/* {isBulkCampaign ? 'Save Template' : 'Generate Email'} */}
                         {loading ? 'Generating...' : 'Generate Email'}
-                        </Button>
-                    )}
+                    </Button>
                     <button 
                         onClick={onClose}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -579,24 +534,6 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
                         No custom prompts added yet
                     </div>
                 )}
-            </div>
-
-            <div className="mt-6 flex justify-end space-x-3">
-                <Button
-                    onClick={onClose}
-                    variant="outlined"
-                    color="inherit"
-                >
-                    Cancel
-                </Button>
-                <Button
-                    onClick={isBulkCampaign ? handleSaveTemplate : handleGenerateEmail}
-                    variant="contained"
-                    color="primary"
-                    disabled={loading}
-                >
-                    {isBulkCampaign ? 'Save Template' : 'Generate Email'}
-                </Button>
             </div>
         </div>
     );

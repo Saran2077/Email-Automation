@@ -70,10 +70,7 @@ const promptTemplateSchema = new mongoose.Schema({
       type: String,
       required: true
     }
-  }],
-  customInstructions: {
-    type: String
-  }
+  }]
 }, {
   timestamps: true
 });
