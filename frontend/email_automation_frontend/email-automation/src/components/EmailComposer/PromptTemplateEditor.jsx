@@ -40,7 +40,7 @@ const formatSectionName = (name) => {
     return words.join(' ')
 };
 
-const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, onClose, isBulkCampaign }) => {
+const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, onClose, isBulkCampaign, initialTemplateData }) => {
     const [templateData, setTemplateData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -58,7 +58,11 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
     const handleAddPrompt = async () => {
         if (newPrompt.name && newPrompt.content) {
             setCustomPrompts([...customPrompts, { ...newPrompt }]);
-            const response = await promptAPI.updatePromptTemplate(recipientEmail, {data: { customPrompt: [...customPrompts, { ...newPrompt }]}})
+            if (!isBulkCampaign) {
+                await promptAPI.updatePromptTemplate(recipientEmail, {
+                    data: { customPrompt: [...customPrompts, { ...newPrompt }]}
+                });
+            }
             setNewPrompt({ name: '', content: '' });
             setShowPromptForm(false);
             toast.success('Custom prompt added successfully!');
@@ -79,8 +83,8 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
 
     useEffect(() => {
         if (isBulkCampaign) {
-            // Initialize empty template structure for bulk campaigns
-            setTemplateData({
+            // Use initialTemplateData if available, otherwise use empty template
+            setTemplateData(initialTemplateData || {
                 senderContext: {
                     name: '',
                     designation: '',
@@ -92,17 +96,16 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
                     companyWebsite: '',
                     productAndServices: '',
                 },
-                // Skip recipient and company context for bulk campaigns
             });
+            setCustomPrompts(initialTemplateData?.customPrompts || []);
             setExpandedSections({
                 senderContext: true,
                 senderCompanyContext: true,
             });
         } else {
-            // Existing logic for fetching template data
             fetchTemplateData();
         }
-    }, [recipientEmail, isBulkCampaign]);
+    }, [recipientEmail, isBulkCampaign, initialTemplateData]);
 
     const fetchTemplateData = async () => {
         try {
@@ -248,7 +251,7 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
             
             onUpdateBody(JSON.stringify(templatePayload));
             onClose();
-            toast.success('Template saved successfully!');
+            
         } catch (error) {
             toast.error('Failed to save template');
             console.error('Failed to save template:', error);
@@ -494,47 +497,46 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
                 </div>
 
                 {showPromptForm && (
-                    <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="flex flex-col gap-3">
-                            <TextField
-                                fullWidth
-                                label="Prompt Name"
-                                value={newPrompt.name}
-                                onChange={(e) => setNewPrompt({ ...newPrompt, name: e.target.value })}
-                                size="small"
-                                className="bg-white"
-                            />
-                            <TextField
-                                fullWidth
-                                multiline
-                                rows={3}
-                                label="Prompt Content"
-                                value={newPrompt.content}
-                                onChange={(e) => setNewPrompt({ ...newPrompt, content: e.target.value })}
-                                className="bg-white"
-                            />
-                            <div className="flex justify-end gap-2">
-                                <Button
-                                    onClick={() => {
-                                        setShowPromptForm(false);
-                                        setNewPrompt({ name: '', content: '' });
-                                    }}
-                                    variant="outlined"
-                                    color="inherit"
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    onClick={handleAddPrompt}
-                                    variant="contained"
-                                    color="primary"
-                                    disabled={!newPrompt.name || !newPrompt.content}
-                                >
-                                    Save Prompt
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
+                    <Box sx={{ mb: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                        <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                            Add New Prompt
+                        </Typography>
+                        <TextField
+                            fullWidth
+                            label="Prompt Name"
+                            value={newPrompt.name}
+                            onChange={(e) => setNewPrompt({ ...newPrompt, name: e.target.value })}
+                            sx={{ mb: 2 }}
+                        />
+                        <TextField
+                            fullWidth
+                            label="Prompt Content"
+                            value={newPrompt.content}
+                            onChange={(e) => setNewPrompt({ ...newPrompt, content: e.target.value })}
+                            multiline
+                            rows={4}
+                            sx={{ mb: 2 }}
+                        />
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                            <Button
+                                onClick={() => {
+                                    setShowPromptForm(false);
+                                    setNewPrompt({ name: '', content: '' });
+                                }}
+                                variant="outlined"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleAddPrompt}
+                                variant="contained"
+                                color="primary"
+                                disabled={!newPrompt.name || !newPrompt.content}
+                            >
+                                Save Prompt
+                            </Button>
+                        </Box>
+                    </Box>
                 )}
 
                 {/* Prompts List */}

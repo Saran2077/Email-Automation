@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import PromptTemplateEditor from './EmailComposer/PromptTemplateEditor'
 
-function CreateCampaignModal({ onClose, onSubmit, selectedCustomers }) {
+function CreateCampaignModal({ onClose, onSubmit, selectedCustomers, onTemplateUpdate }) {
   const navigate = useNavigate()
   const [campaignData, setCampaignData] = useState({
     name: '',
@@ -32,23 +32,7 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers }) {
     setIsLoading(true)
 
     try {
-      // First create recipients with template
-      const recipientsResponse = await fetch('http://localhost:3000/api/v1/recipients/bulk-create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          recipients: selectedCustomers,
-          template: templatePayload
-        }),
-      })
-
-      if (!recipientsResponse.ok) {
-        throw new Error('Failed to create recipients')
-      }
-
-      // Then proceed with Active Campaign upload
+      // Only do Active Campaign upload
       const response = await fetch('http://localhost:3000/api/activeCampaign/contact/bulk-upload', {
         method: 'POST',
         headers: {
@@ -56,20 +40,18 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers }) {
         },
         body: JSON.stringify({
           list_id: selectedList,
-          data: newCampaignId
+          data: selectedCustomers
         }),
       })
 
-      // Then call the parent's onSubmit for recipients API
-      await onSubmit()
-
-      // Check if the response is ok (status in the range 200-299)
       if (!response.ok) {
-        const errorData = await response.json() // Attempt to parse error response
-        throw new Error(errorData?.meta?.message || 'Error uploading contacts')
+        throw new Error('Error uploading contacts to Active Campaign')
       }
 
-      const responseData = await response.json() // Parse the successful response
+      // Call parent's onSubmit with selected stage
+      await onSubmit()
+      
+      const responseData = await response.json()
       if (responseData.meta.status) {
         onClose()
         toast.success(responseData.meta.message)
@@ -80,14 +62,16 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers }) {
       console.error('Error:', error)
       toast.error(error.message)
     } finally {
-      setIsLoading(false) // Ensure loading state is reset
+      setIsLoading(false)
     }
   }
 
   const handleTemplateUpdate = (templateData) => {
-    setTemplatePayload(JSON.parse(templateData))
-    setShowPromptTemplate(false)
-    toast.success('Template saved successfully!')
+    const parsedTemplate = JSON.parse(templateData);
+    setTemplatePayload(parsedTemplate);
+    onTemplateUpdate(parsedTemplate); // Pass template to parent
+    setShowPromptTemplate(false);
+    toast.success('Template saved successfully!');
   }
 
   return (
@@ -182,6 +166,7 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers }) {
               onClose={() => setShowPromptTemplate(false)}
               onUpdateBody={handleTemplateUpdate}
               isBulkCampaign={true}
+              initialTemplateData={templatePayload}
             />
           </div>
         </div>

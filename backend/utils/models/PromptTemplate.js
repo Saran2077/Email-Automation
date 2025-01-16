@@ -14,53 +14,31 @@ const promptTemplateSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  senderCompanyContext: {
-    companyName: {
-      type: String,
-    },
-    companyDescription: {
-      type: String,
-    },
-    companyWebsite: {
-      type: String,
-    },
-    productAndServices: {
-      type: String,
-    }
-  },
-  targetCompanyContext: {
-    companyName: {
-      type: String,
-    },
-    companyDescription: {
-      type: String,
-    },
-    industry: {
-      type: String,
-    }
-  },
-  recipientContext: {
-    name: {
-      type: String,
-    },
-    designation: {
-      type: String,
-    },
-    shortBio: {
-      type: String,
-    }
-  },
-  senderContext: {
-    name: {
-      type: String,
-    },
-    designation: {
-      type: String,
-    },
-    companyName: {
-      type: String,
-    }
-  },
+  senderCompanyContext: new mongoose.Schema({
+    companyName: { type: String },
+    companyDescription: { type: String },
+    companyWebsite: { type: String },
+    productAndServices: { type: String }
+  }, { strict: false, _id: false }),
+  
+  targetCompanyContext: new mongoose.Schema({
+    companyName: { type: String },
+    companyDescription: { type: String },
+    industry: { type: String }
+  }, { strict: false, _id: false }),
+  
+  recipientContext: new mongoose.Schema({
+    name: { type: String },
+    designation: { type: String },
+    shortBio: { type: String }
+  }, { strict: false, _id: false }),
+  
+  senderContext: new mongoose.Schema({
+    name: { type: String },
+    designation: { type: String },
+    companyName: { type: String }
+  }, { strict: false, _id: false }),
+  
   customPrompt: [{
     name: {
       type: String,

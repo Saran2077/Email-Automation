@@ -66,10 +66,11 @@ export const recipientAPI = {
     }
   },
 
-  bulkCreate: async (data) => {
+  bulkCreate: async ({recipients, template}) => {
     try {
       const response = await api.post('/v1/recipients/bulk-create', {
-        recipients: Array.isArray(data) ? data : [data]
+        recipients: Array.isArray(recipients) ? recipients : [recipients],
+        template: Array.isArray(template) ? template[0] : template
       });
       return response.data;
     } catch (error) {
