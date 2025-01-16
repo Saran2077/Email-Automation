@@ -66,6 +66,20 @@ const recipientSchema = new mongoose.Schema({
     clicked: { type: Number, default: 0 },
     failed: { type: Number, default: 0 }
   },
+  //notes
+  notes: {
+    type: [{
+      content: {
+          type: String,
+          required: true
+      },
+      createdAt: {
+          type: Date,
+          default: Date.now
+      }
+  }],
+  default: []
+  },
   // Email tracking
   emails: {
     sent: [{

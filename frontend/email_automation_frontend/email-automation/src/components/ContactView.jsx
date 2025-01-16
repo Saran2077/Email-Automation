@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Linkedin, Building2, User, Briefcase, Calendar, MessageSquare, Trophy, TrendingUp, Inbox, Send, Edit } from 'lucide-react';
+import { Mail, Linkedin, Building2, User, Briefcase, Calendar, MessageSquare, Trophy, TrendingUp, Inbox, Send, Edit, SaveIcon } from 'lucide-react';
 import TextArea from 'antd/es/input/TextArea';
 import { recipientAPI } from '../utils/apiLayer';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 export default function ContactView() {
   const [stage, setStage] = useState(null);
@@ -47,6 +47,7 @@ export default function ContactView() {
       console.log(response)
       setContact(response);
       setStage(response?.stage)
+      setNotes(response?.notes)
     } catch (error) {
       console.error(error);
     }
@@ -61,14 +62,14 @@ export default function ContactView() {
     }
   };
 
-  const handleAddNote = () => {
+  const handleAddNote = async () => {
     if (note.trim()) {
       const newNote = {
-        text: note,
-        date: new Date().toLocaleDateString(),
-        time: new Date().toLocaleTimeString()
+        content: note,
       };
       setNotes([newNote, ...notes]);
+      const response = await recipientAPI.update(contact?._id, { notes: [newNote, ...notes] })
+      console.log(response)
       setNote('');
     }
   };
@@ -88,17 +89,20 @@ export default function ContactView() {
     }
   }
 
-  const handleEditNote = (index) => {
-    const updatedNote = prompt("Edit your note:", notes[index].text);
+  const handleEditNote = async (index) => {
+    const updatedNote = notes[index].content
     if (updatedNote !== null) {
       const newNotes = [...notes];
-      newNotes[index].text = updatedNote;
+      newNotes[index].content = updatedNote;
+      
+      const response = await recipientAPI.update(contact?._id, { notes: newNotes })
       setNotes(newNotes);
     }
   };
 
-  const handleDeleteNote = (index) => {
+  const handleDeleteNote = async(index) => {
     const newNotes = notes.filter((_, i) => i !== index);
+    const response = await recipientAPI.update(contact?._id, { notes: notes.filter((_, i) => i !== index) })
     setNotes(newNotes);
   };
 
@@ -314,50 +318,52 @@ export default function ContactView() {
                     {editingIndex === index ? (
                       <>
                         <TextArea
-                          value={n.text}
+                          value={n.content}
                           onChange={(e) => {
                             const newNotes = [...notes];
-                            newNotes[index].text = e.target.value;
+                            newNotes[index].content = e.target.value;
                             setNotes(newNotes);
                           }}
                           className="w-full p-2 border rounded-lg mb-2"
                         />
-                        <div className="flex justify-end space-x-2">
+                        <div className="flex justify-end space-x-2 mt-2">
                           <button 
                             onClick={() => {
                               setEditingIndex(null);
+                              handleEditNote(editingIndex);
+
                             }} 
                             className="text-blue-600 hover:underline"
                           >
-                            Save
+                            <SaveIcon className="h-4 w-4" />
                           </button>
                           <button 
                             onClick={() => handleDeleteNote(index)} 
                             className="text-red-600 hover:underline"
                           >
-                            Delete
+                            <TrashIcon className="h-4 w-4" />
                           </button>
                         </div>
                       </>
                     ) : (
                       <>
-                        <p className="text-gray-600 break-words">{n.text}</p>
+                        <p className="text-gray-600 break-words">{n.content}</p>
                         <p className="text-sm text-gray-400 mt-2 flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
-                          {n.date} at {n.time}
+                          {new Date(n?.createdAt)?.toLocaleDateString()} at {new Date(n?.createdAt)?.toLocaleTimeString()}
                         </p>
-                        <div className="flex justify-end space-x-2 mt-2">
+                        <div className="flex justify-end space-x-3 mt-2">
                           <button 
                             onClick={() => setEditingIndex(index)} 
                             className="text-blue-600 hover:underline"
                           >
-                            Edit
+                            <PencilIcon className="h-4 w-4" />
                           </button>
                           <button 
                             onClick={() => handleDeleteNote(index)} 
                             className="text-red-600 hover:underline"
                           >
-                            Delete
+                            <TrashIcon className="h-4 w-4" />
                           </button>
                         </div>
                       </>
