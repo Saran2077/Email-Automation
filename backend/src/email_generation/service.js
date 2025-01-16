@@ -187,36 +187,27 @@ class EmailGenerationService {
     async promptTemplateCreation(recipientIds, payload) {
         try {
             // 1. Get all recipients
-            const recipients = await RecipientRepository.list({ recipientIds: { $in: recipientIds } });
+            const recipients = await RecipientRepository.list({ recipientId: { $in: recipientIds } });
             
             // 2. Create templates for each recipient
-            const templatePromises = recipients.recipients.map(async (recipient) => {
+            const templatePromises = recipients?.recipients.map(async (recipient) => {
                 const templateData = {
-                    recipientEmail: recipient.email,
-                    stage: recipient.stage,
-                    senderCompanyContext: {
-                        companyName: payload.senderCompanyContext.companyName || "Adya",
-                        companyDescription: payload.senderCompanyContext.companyDescription || "",
-                        companyWebsite: payload.senderCompanyContext.companyWebsite || "https://adya.ai",
-                        productAndServices: payload.senderCompanyContext.productAndServices || ""
-                    },
+                    recipientEmail: recipient?.email,
+                    stage: recipient?.stage,
+                    senderCompanyContext: payload?.senderCompanyContext,
                     targetCompanyContext: {
-                        companyName: recipient.company,
-                        companyDescription: recipient.Description,
-                        industry: recipient.industry
+                        companyName: recipient?.company,
+                        companyDescription: recipient?.Description,
+                        industry: recipient?.industry
                     },
                     recipientContext: {
-                        name: recipient.name,
-                        designation: recipient.designation,
-                        shortBio: recipient.shortBio
+                        name: recipient?.name,
+                        designation: recipient?.designation,
+                        shortBio: recipient?.shortBio
                     },
-                    senderContext: {
-                        name: payload.senderContext.name || "Saran M",
-                        designation: payload.senderContext.designation || "Chief of Communications",
-                        companyName: payload.senderContext.companyName || "Adya"
-                    },
-                    customPrompt: payload.customPrompt || [],
-                    customInstructions: payload.customInstructions || ""
+                    senderContext: payload?.senderContext,
+                    customPrompt: payload?.customPrompts || [],
+                    customInstructions: payload?.customInstructions || ""
                 };
 
                 // Create template

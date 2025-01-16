@@ -170,12 +170,13 @@ class RecipientHandler {
             }
 
             const createdRecipients = await recipientService.bulkCreateRecipients(recipients);
-
+            console.log(createdRecipients);
             //from created recipients iterate over each recipient and store the recipientId in one variable
-            const recipientIds = createdRecipients.map(recipient => recipient.id);
+            const recipientIds = createdRecipients.map(recipient => recipient.recipientId);
+            // console.log(recipientIds);
             const promptTemplateCreation = await emailGenerationService.promptTemplateCreation(recipientIds, template);
-            console.log(promptTemplateCreation);
-            res.status(201).json(createdRecipients);
+            // console.log(promptTemplateCreation);
+            res.status(201).json({ createdRecipients, promptTemplateCreation });
         } catch (error) {
             console.error('Bulk create error:', error);
             res.status(500).json({ error: error.message });

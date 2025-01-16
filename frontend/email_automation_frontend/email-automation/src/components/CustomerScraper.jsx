@@ -28,6 +28,8 @@ function CustomerScraper() {
     practiceArea: []
   });
 
+  const [templatePayload, setTemplatePayload] = useState(null);
+
   useEffect(() => {
     const loadCustomers = async () => {
       setLoading(true);
@@ -155,21 +157,12 @@ function CustomerScraper() {
   }
 
   const handleAddToRecipientsSubmit = async (selectedStage) => {
-    // if (!selectedStage) {
-    //   toast.error('Please select a stage')
-    //   return
-    // }
-
     setLoading(true)
     try {
       const recipientsToCreate = selectedCustomers.map(customer => {
-        if (!customer) {
-          throw new Error('Invalid customer data')
-        }
-        console.log(customer);
         const payload = prepareRecipientPayload(customer, {
           name: customer.name,
-          email: customer.email || `user${Math.floor(Math.random() * 10000)}@gmail.com`,
+          email: customer.email,
           designation: customer.designation,
           profileLinks: customer.profileLinks,
           shortBio: customer.shortBio
@@ -178,11 +171,12 @@ function CustomerScraper() {
         return payload
       })
 
-      if (recipientsToCreate.length === 0) {
-        throw new Error('No valid recipients to create')
-      }
+      // Modified API call to include template
+      await recipientAPI.bulkCreate({
+        recipients: recipientsToCreate,
+        template: templatePayload
+      });
 
-      await recipientAPI.bulkCreate(recipientsToCreate)
       toast.success(`Successfully created ${recipientsToCreate.length} recipients`)
       setShowCampaignModal(false)
       setSelectedCustomers([])
@@ -308,6 +302,7 @@ function CustomerScraper() {
           selectedCustomers={selectedCustomers}
           onSubmit={handleAddToRecipientsSubmit}
           loading={loading}
+          onTemplateUpdate={(template) => setTemplatePayload(template)}
         />
       )}
     </div>

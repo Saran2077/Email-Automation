@@ -127,6 +127,7 @@ async function createAccount(companyData) {
             headers: headers,
             body: JSON.stringify(companyData)
         });
+        console.log('response', response)
         if (!response.ok) {
             const errorResponse = await response.json(); // Log the error response
             throw new Error(`Error creating account: ${response.statusText}, Details: ${JSON.stringify(errorResponse)}`);

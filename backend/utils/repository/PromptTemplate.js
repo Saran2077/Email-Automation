@@ -23,7 +23,8 @@ class PromptTemplateRepository {
 
   async getByEmail(email){
     try {
-      return await PromptTemplate.findOne({ recipientEmail: email });
+      return await PromptTemplate.findOne({ recipientEmail: email })
+        .sort({ createdAt: -1 });
     } catch (error) {
       throw new Error(`Error fetching prompt template: ${error.message}`);
     }

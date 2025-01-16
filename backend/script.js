@@ -30,106 +30,7 @@ export function convertTracxnToExcel(tracxnData, outputPath) {
     }
 }
 
-export function appendTracxnToExcel(tracxnData, outputPath) {
-    try {
-        // Validate input
-        if (!Array.isArray(tracxnData) || tracxnData.length === 0) {
-            throw new Error('Invalid input: Tracxn data must be a non-empty array');
-        }
-
-        let workbook;
-        try {
-            // Try to read existing workbook
-            workbook = XLSX.readFile(outputPath);
-        } catch (error) {
-            // If file doesn't exist, create new workbook
-            workbook = XLSX.utils.book_new();
-        }
-
-        // Get the worksheet name
-        const sheetName = 'Tracxn Data';
-
-        // Check if worksheet already exists
-        let worksheet;
-        if (workbook.Sheets[sheetName]) {
-            // Get existing worksheet
-            worksheet = workbook.Sheets[sheetName];
-            
-            // Get current data
-            const existingData = XLSX.utils.sheet_to_json(worksheet);
-            
-            // Combine existing data with new data
-            const combinedData = [...existingData, ...tracxnData];
-            
-            // Convert combined data back to worksheet
-            worksheet = XLSX.utils.json_to_sheet(combinedData);
-        } else {
-            // Create new worksheet if it doesn't exist
-            worksheet = XLSX.utils.json_to_sheet(tracxnData);
-        }
-
-        // Update/add the worksheet in the workbook
-        workbook.Sheets[sheetName] = worksheet;
-
-        // Write the updated workbook to file
-        XLSX.writeFile(workbook, outputPath);
-
-        console.log(`Data successfully appended to Excel file at: ${outputPath}`);
-    } catch (error) {
-        console.error('Error appending Tracxn data to Excel:', error.message);
-        throw error;
-    }
-}
-
-export function appendIdToTracxnData(outputPath) {
-    try {
-        let workbook;
-        try {
-            // Try to read existing workbook
-            workbook = XLSX.readFile(outputPath);
-        } catch (error) {
-            // If file doesn't exist, create new workbook
-            workbook = XLSX.utils.book_new();
-        }
-
-        // Get the worksheet name
-        const sheetName = 'Tracxn Data';
-
-        // Check if worksheet already exists
-        let worksheet;
-        if (workbook.Sheets[sheetName]) {
-            // Get existing worksheet
-            worksheet = workbook.Sheets[sheetName];
-            
-            // Get current data
-            const existingData = XLSX.utils.sheet_to_json(worksheet);
-
-            const newData = existingData?.map((data, index) => ({...data, id: index}))
-
-            console.log(newData);
-            
-            // Convert combined data back to worksheet
-            worksheet = XLSX.utils.json_to_sheet(newData);
-        } else {
-            // Create new worksheet if it doesn't exist
-            // worksheet = XLSX.utils.json_to_sheet(tracxnData);
-        }
-
-        // Update/add the worksheet in the workbook
-        workbook.Sheets[sheetName] = worksheet;
-
-        // Write the updated workbook to file
-        XLSX.writeFile(workbook, outputPath);
-
-        console.log(`Data successfully appended to Excel file at: ${outputPath}`);
-    } catch (error) {
-        console.error('Error appending Tracxn data to Excel:', error.message);
-        throw error;
-    }
-}
-
-// appendIdToTracxnData('tracxn_output.xlsx')
-
+const tracxnData = []
 const extractRequiredFields = (companyData) => {
     /**
      * Extract only the required fields from the Tracxn API response
@@ -242,25 +143,26 @@ while (true) {
     from += 20
 }
 
-// if (fileURLToPath(import.meta.url) === process.argv[1]) {
-//     const inputFile = process.argv[2];
-//     const outputFile = process.argv[3];
+console.log(tracxnData)
 
-//     if (inputFile) {
-//         // If input file is provided, read from file
-//         try {
-//             const jsonData = JSON.parse(readFileSync(inputFile, 'utf8'));
+if (fileURLToPath(import.meta.url) === process.argv[1]) {
+    const inputFile = process.argv[2];
+    const outputFile = process.argv[3];
+
+    if (inputFile) {
+        // If input file is provided, read from file
+        try {
+            const jsonData = JSON.parse(readFileSync(inputFile, 'utf8'));
             
-//             convertTracxnToExcel(jsonData, outputFile || 'tracxn_output.xlsx');
-//         } catch (error) {
-//             console.error('Error processing file:', error.message);
-//             process.exit(1);
-//         }
-//     } else {
-//         // If no input file is provided, use sample data
-//         console.log(tracxnData)
-//         convertTracxnToExcel(tracxnData, 'tracxn_outpu.xlsx');
-//     }
-// }
+            convertTracxnToExcel(jsonData, outputFile || 'tracxn_output.xlsx');
+        } catch (error) {
+            console.error('Error processing file:', error.message);
+            process.exit(1);
+        }
+    } else {
+        // If no input file is provided, use sample data
+        convertTracxnToExcel(tracxnData, 'tracxn_output.xlsx');
+    }
+}
 
 export default convertTracxnToExcel;
