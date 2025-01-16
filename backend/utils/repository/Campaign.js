@@ -26,7 +26,7 @@ class CampaignRepository {
     try {
       const skip = (page - 1) * limit;
       const query = Campaign.find(filters)
-        .populate('recipients')
+        .populate('recipientsList')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -84,7 +84,7 @@ class CampaignRepository {
     try {
       const campaign = await Campaign.findOneAndUpdate(
         { campaignId },
-        { $addToSet: { recipients: { $each: recipientIds } } },
+        { $addToSet: { recipientsList: { $each: recipientIds } } },
         { new: true }
       ).populate('recipients');
 
@@ -103,7 +103,7 @@ class CampaignRepository {
     try {
       const campaign = await Campaign.findOneAndUpdate(
         { campaignId },
-        { $pullAll: { recipients: recipientIds } },
+        { $pullAll: { recipientsList: recipientIds } },
         { new: true }
       ).populate('recipients');
 

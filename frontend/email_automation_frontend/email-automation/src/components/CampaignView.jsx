@@ -1,302 +1,264 @@
-import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import { 
-  UserGroupIcon, 
-  CalendarIcon, 
-  ChartBarIcon,
-  EnvelopeIcon,
-  UsersIcon 
-} from '@heroicons/react/24/outline'
+import React, { useState } from 'react';
+import { Button, Modal, Table, Form, Input, Select, Space, Popconfirm } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
 
-const STAGES = {
-  contact: { name: 'Contact', color: 'gray' },
-  lead: { name: 'Lead', color: 'blue' },
-  deal: { name: 'Deal', color: 'green' },
-  account: { name: 'Account', color: 'purple' }
-}
+// Sample campaign data
+const initialCampaigns = [
+  { 
+    id: 1, 
+    name: 'Summer Sale 2025',
+    createdDate: '2025-01-01',
+    description: 'Summer promotion campaign',
+    recipients: ['group1', 'group3']
+  },
+  { 
+    id: 2, 
+    name: 'New Year Promotion',
+    createdDate: '2025-01-10',
+    description: 'New year special deals',
+    recipients: ['group2']
+  }
+];
 
-function CampaignView() {
-  const { id } = useParams()
-  const [campaign, setCampaign] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [groupedRecipients, setGroupedRecipients] = useState({})
-  const [selectedRecipients, setSelectedRecipients] = useState({})
+// Sample recipient groups data
+const recipientGroups = [
+  { value: 'group1', label: 'Premium Customers', count: 1200 },
+  { value: 'group2', label: 'New Customers', count: 850 },
+  { value: 'group3', label: 'Regular Customers', count: 3000 },
+  { value: 'group4', label: 'VIP Members', count: 500 },
+  { value: 'group5', label: 'Dormant Customers', count: 1500 }
+];
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCampaign({
-        id,
-        name: 'Welcome Campaign',
-        description: 'Initial welcome message for new customers',
-        subject: 'Welcome to our service!',
-        status: 'Active',
-        scheduledDate: '2024-03-25T10:00',
-        stats: {
-          recipients: 150,
-          opened: 75,
-          clicked: 45,
-          bounced: 2
-        },
-        recipients: [
-          { id: 1, name: 'John Doe', email: 'john@example.com', status: 'Sent', stage: 'contact' },
-          { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'Opened', stage: 'lead' },
-          { id: 3, name: 'Alice Brown', email: 'alice@example.com', status: 'Sent', stage: 'deal' },
-          { id: 4, name: 'Bob Wilson', email: 'bob@example.com', status: 'Opened', stage: 'contact' },
-        ]
-      })
-      setLoading(false)
-    }, 1000)
-  }, [id])
+// Sample individual recipients data
+const individualRecipients = [
+  { value: 'user1', label: 'John Doe (john@example.com)' },
+  { value: 'user2', label: 'Jane Smith (jane@example.com)' },
+  { value: 'user3', label: 'Bob Wilson (bob@example.com)' },
+  { value: 'user4', label: 'Alice Brown (alice@example.com)' }
+];
 
-  useEffect(() => {
-    if (campaign) {
-      // Group recipients by stage
-      const grouped = campaign.recipients.reduce((acc, recipient) => {
-        if (!acc[recipient.stage]) {
-          acc[recipient.stage] = []
-        }
-        acc[recipient.stage].push(recipient)
-        return acc
-      }, {})
-      setGroupedRecipients(grouped)
-    }
-  }, [campaign])
+const CampaignManagement = () => {
+  const [campaigns, setCampaigns] = useState(initialCampaigns);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [modalType, setModalType] = useState('create');
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [form] = Form.useForm();
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 5,
+    total: initialCampaigns.length,
+  });
 
-  const handleStageChange = (recipientId, newStage) => {
-    if (!campaign) return
+  // Table columns configuration
+  const columns = [
+    {
+      title: 'Campaign Name',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Created Date',
+      dataIndex: 'createdDate',
+      key: 'createdDate',
+    },
+    {
+      title: 'Recipients',
+      key: 'recipients',
+      render: (_, record) => (
+        <span>
+          {record.recipients?.length} group(s) selected
+        </span>
+      ),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="text"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          />
+          <Popconfirm
+            title="Delete Campaign"
+            description="Are you sure you want to delete this campaign?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
 
-    // Update the recipient's stage
-    const updatedRecipients = campaign.recipients.map(recipient => {
-      if (recipient.id === recipientId) {
-        return { ...recipient, stage: newStage }
+  const handleEdit = (campaign) => {
+    setModalType('edit');
+    setSelectedCampaign(campaign);
+    form.setFieldsValue(campaign);
+    setIsModalVisible(true);
+  };
+
+  const handleDelete = (id) => {
+    setCampaigns(campaigns.filter(campaign => campaign.id !== id));
+  };
+
+  const handleCreate = () => {
+    setModalType('create');
+    setSelectedCampaign(null);
+    form.resetFields();
+    setIsModalVisible(true);
+  };
+
+  const handleModalOk = () => {
+    form.validateFields().then((values) => {
+      if (modalType === 'create') {
+        const newCampaign = {
+          ...values,
+          id: campaigns.length + 1,
+          createdDate: new Date().toISOString().split('T')[0],
+        };
+        setCampaigns([...campaigns, newCampaign]);
+      } else {
+        setCampaigns(campaigns.map(campaign =>
+          campaign.id === selectedCampaign.id
+            ? { ...campaign, ...values }
+            : campaign
+        ));
       }
-      return recipient
-    })
+      setIsModalVisible(false);
+    });
+  };
 
-    // Update campaign with new recipients
-    setCampaign(prev => ({
-      ...prev,
-      recipients: updatedRecipients
-    }))
-  }
-
-  const handleRecipientSelection = (recipientId, stageKey) => {
-    setSelectedRecipients(prev => ({
-      ...prev,
-      [stageKey]: {
-        ...prev[stageKey],
-        [recipientId]: !prev[stageKey]?.[recipientId]
-      }
-    }))
-  }
-
-  const handleBulkSelection = (stageKey) => {
-    const currentStageRecipients = groupedRecipients[stageKey] || []
-    const allSelected = currentStageRecipients.every(
-      r => selectedRecipients[stageKey]?.[r.id]
-    )
-
-    setSelectedRecipients(prev => ({
-      ...prev,
-      [stageKey]: currentStageRecipients.reduce((acc, recipient) => ({
-        ...acc,
-        [recipient.id]: !allSelected
-      }), {})
-    }))
-  }
-
-  const handleSubscribeToList = (stageKey) => {
-    const selectedIds = Object.entries(selectedRecipients[stageKey] || {})
-      .filter(([_, isSelected]) => isSelected)
-      .map(([id]) => id)
-    
-    console.log(`Subscribe recipients from ${stageKey}:`, selectedIds)
-    // TODO: Implement subscription logic
-  }
-
-  if (loading) {
-    return <div className="p-6">Loading...</div>
-  }
-
-  if (!campaign) {
-    return <div className="p-6">Campaign not found</div>
-  }
+  const handleTableChange = (pagination) => {
+    setPagination(pagination);
+  };
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">{campaign.name}</h2>
-        <p className="text-gray-600 mt-1">{campaign.description}</p>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Campaigns</h1>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleCreate}
+        >
+          Create Campaign
+        </Button>
       </div>
 
-      {/* Campaign Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <UserGroupIcon className="h-8 w-8 text-blue-500" />
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">Recipients</p>
-              <p className="text-xl font-semibold">{campaign.stats.recipients}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <EnvelopeIcon className="h-8 w-8 text-green-500" />
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">Opened</p>
-              <p className="text-xl font-semibold">{campaign.stats.opened}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <ChartBarIcon className="h-8 w-8 text-purple-500" />
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">Clicked</p>
-              <p className="text-xl font-semibold">{campaign.stats.clicked}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <CalendarIcon className="h-8 w-8 text-orange-500" />
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">Scheduled</p>
-              <p className="text-sm font-semibold">
-                {new Date(campaign.scheduledDate).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Table */}
+      <Table
+        columns={columns}
+        dataSource={campaigns}
+        rowKey="id"
+        pagination={pagination}
+        onChange={handleTableChange}
+      />
 
-      {/* Campaign Details */}
-      <div className="bg-white rounded-lg shadow mb-8">
-        <div className="px-6 py-4 border-b">
-          <h3 className="text-lg font-medium">Campaign Details</h3>
-        </div>
-        <div className="p-6 grid grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Email Subject</p>
-            <p className="font-medium">{campaign.subject}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Frequency</p>
-            <p className="font-medium capitalize">{campaign.frequency}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Status</p>
-            <span className={`px-2 py-1 text-sm font-semibold rounded-full 
-              ${campaign.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-              {campaign.status}
-            </span>
-          </div>
-        </div>
-      </div>
+      {/* Create/Edit Modal */}
+      <Modal
+        title={modalType === 'create' ? 'Create Campaign' : 'Edit Campaign'}
+        open={isModalVisible}
+        onOk={handleModalOk}
+        onCancel={() => setIsModalVisible(false)}
+        width={800}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{ 
+            recipients: [],
+            individualRecipients: []
+          }}
+        >
+          <Form.Item
+            name="name"
+            label="Campaign Name"
+            rules={[{ required: true, message: 'Please enter campaign name' }]}
+          >
+            <Input placeholder="Enter campaign name" />
+          </Form.Item>
 
-      {/* Recipients by Stage */}
-      <div className="mt-8">
-        <h3 className="text-lg font-medium mb-4">Recipients by Stage</h3>
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          {Object.entries(STAGES).map(([stageKey, stageInfo]) => (
-            <div 
-              key={stageKey}
-              className="bg-white rounded-lg shadow p-4"
+          <Form.Item
+            name="description"
+            label="Description"
+            rules={[{ required: true, message: 'Please enter campaign description' }]}
+          >
+            <Input.TextArea 
+              rows={4} 
+              placeholder="Enter campaign description"
+            />
+          </Form.Item>
+
+          <div className="bg-gray-50 p-4 rounded-lg mb-4">
+            <h3 className="text-lg font-medium mb-4">Recipients</h3>
+            
+            {/* <Form.Item
+              name="recipients"
+              label="Recipient Groups"
+              extra="Select one or more recipient groups"
             >
-              <div className={`text-${stageInfo.color}-600 font-medium mb-2`}>
-                {stageInfo.name}
-              </div>
-              <div className="text-2xl font-semibold">
-                {groupedRecipients[stageKey]?.length || 0}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+              <Select
+                mode="multiple"
+                placeholder="Select recipient groups"
+                style={{ width: '100%' }}
+                options={recipientGroups.map(group => ({
+                  value: group.value,
+                  label: (
+                    <div className="flex justify-between">
+                      <span>{group.label}</span>
+                      <span className="text-gray-500">({group.count} recipients)</span>
+                    </div>
+                  )
+                }))}
+              />
+            </Form.Item> */}
 
-      {/* Recipients List Grouped by Stage */}
-      {Object.entries(STAGES).map(([stageKey, stageInfo]) => (
-        groupedRecipients[stageKey]?.length > 0 && (
-          <div key={stageKey} className="bg-white rounded-lg shadow mb-6">
-            <div className="px-6 py-4 border-b flex justify-between items-center">
-              <h3 className="text-lg font-medium">
-                {stageInfo.name} Recipients
-              </h3>
-              {Object.values(selectedRecipients[stageKey] || {}).some(Boolean) && (
-                <button
-                  onClick={() => handleSubscribeToList(stageKey)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center"
-                >
-                  <UsersIcon className="h-5 w-5 mr-2" />
-                  Subscribe to List
-                </button>
-              )}
+            <Form.Item
+              name="individualRecipients"
+              label="Individual Recipients"
+              extra="Optionally add individual recipients"
+            >
+              <Select
+                mode="multiple"
+                placeholder="Search and select individual recipients"
+                style={{ width: '100%' }}
+                options={individualRecipients}
+                showSearch
+                filterOption={(input, option) =>
+                  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+              />
+            </Form.Item>
+
+            <div className="bg-blue-50 p-3 rounded-lg mt-4">
+              <Form.Item noStyle shouldUpdate>
+                {({ getFieldValue }) => {
+                  const selectedGroups = getFieldValue('recipients') || [];
+                  const selectedIndividuals = getFieldValue('individualRecipients') || [];
+                  const totalRecipients = selectedGroups.reduce((acc, groupId) => {
+                    const group = recipientGroups.find(g => g.value === groupId);
+                    return acc + (group ? group.count : 0);
+                  }, 0) + selectedIndividuals.length;
+
+                  return (
+                    <div className="text-sm text-blue-700">
+                      <UserOutlined className="mr-2" />
+                      Total Recipients: {totalRecipients.toLocaleString()}
+                    </div>
+                  );
+                }}
+              </Form.Item>
             </div>
-            <table className="min-w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    <input
-                      type="checkbox"
-                      onChange={() => handleBulkSelection(stageKey)}
-                      checked={
-                        groupedRecipients[stageKey]?.length > 0 &&
-                        groupedRecipients[stageKey]?.every(
-                          r => selectedRecipients[stageKey]?.[r.id]
-                        )
-                      }
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stage</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {groupedRecipients[stageKey].map(recipient => (
-                  <tr key={recipient.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={selectedRecipients[stageKey]?.[recipient.id] || false}
-                        onChange={() => handleRecipientSelection(recipient.id, stageKey)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{recipient.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{recipient.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full 
-                        ${recipient.status === 'Opened' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                        {recipient.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        value={recipient.stage}
-                        onChange={(e) => handleStageChange(recipient.id, e.target.value)}
-                        className="border rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        {Object.entries(STAGES).map(([key, { name }]) => (
-                          <option key={key} value={key}>
-                            {name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
-        )
-      ))}
+        </Form>
+      </Modal>
     </div>
-  )
-}
+  );
+};
 
-export default CampaignView 
+export default CampaignManagement;
