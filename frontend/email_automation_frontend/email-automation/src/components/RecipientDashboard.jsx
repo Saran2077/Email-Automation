@@ -31,6 +31,19 @@ function RecipientDashboard() {
     fetchRecipients()
   }, [currentPage, filters])
 
+  const getEngagementColor = (level) => {
+    switch (level) {
+      case 'cold':
+        return 'bg-blue-100 text-blue-800';
+      case 'warm':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'hot':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const fetchRecipients = async () => {
     try {
       setLoading(true)
@@ -188,6 +201,7 @@ function RecipientDashboard() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stage</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Engagement Level</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
               </tr>
             </thead>
@@ -207,6 +221,11 @@ function RecipientDashboard() {
                         <Select.Option key={stage} value={stage}>{stage}</Select.Option>
                       ))}
                     </Select>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold ${getEngagementColor(recipient?.engagement_level)}`}>
+                      {recipient?.engagement_level || 'Unknown'}
+                    </span>
                   </td>
                   <td>
                     <IconButton onClick={() => navigate(`/contactView/${recipient?.recipientId}`)}>

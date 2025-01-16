@@ -60,6 +60,11 @@ const recipientSchema = new mongoose.Schema({
     enum: ['Contact', 'Lead', 'Deal', 'Account'],
     default: 'Contact'
   },
+  engagement_level: {
+    type: String,
+    enum: ['', 'Cold', 'Warm', 'Hot'],
+    default: ''
+  },
   metrics: {
     delivered: { type: Number, default: 0 },
     opened: { type: Number, default: 0 },

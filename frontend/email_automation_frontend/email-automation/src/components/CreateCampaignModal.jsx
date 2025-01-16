@@ -32,21 +32,52 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers }) {
     setIsLoading(true)
 
     try {
+      console.log(selectedCustomers)
       // First create recipients with template
-      const recipientsResponse = await fetch('http://localhost:3000/api/v1/recipients/bulk-create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          recipients: selectedCustomers,
-          template: templatePayload
-        }),
-      })
+      // const recipientsResponse = await fetch('http://localhost:3000/api/v1/recipients/bulk-create', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     recipients: selectedCustomers,
+      //     template: templatePayload
+      //   }),
+      // })
 
-      if (!recipientsResponse.ok) {
-        throw new Error('Failed to create recipients')
-      }
+      // if (!recipientsResponse.ok) {
+      //   throw new Error('Failed to create recipients')
+      // }
+
+      const newSelectedCustomers = selectedCustomers?.map((customer) => ({...customer, email: customer?.email || `user${Math.floor(Math.random() * 10000)}@gmail.com`}))
+
+      const newCampaignId = Object.values(newSelectedCustomers.reduce((acc, customer) => {
+        const key = customer.Name;
+        if (!acc[key]) {
+          acc[key] = {
+            Name: customer.Name,
+            Description: customer.Description,
+            Primary_Industry: customer.Primary_Industry,
+            Business_Models: customer.Business_Models,
+            Domain: customer.Domain,
+            LinkedIn_URL: customer.LinkedIn_URL,
+            Annual_Revenue: customer.Annual_Revenue,
+            Employee_List: []
+          };
+        }
+        acc[key].Employee_List.push({
+          designation: customer.designation,
+          id: customer.id,
+          name: customer.name,
+
+          profileLinks: customer.profileLinks,
+          shortBio: customer.shortBio,
+          isKeyPeople: customer.isKeyPeople,
+          isFoundingMember: customer.isFoundingMember,
+          tracxnId: customer.tracxnId
+        });
+        return acc;
+      }, {}))
 
       // Then proceed with Active Campaign upload
       const response = await fetch('http://localhost:3000/api/activeCampaign/contact/bulk-upload', {

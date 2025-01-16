@@ -128,7 +128,7 @@ export function appendIdToTracxnData(outputPath) {
     }
 }
 
-// appendIdToTracxnData('tracxn_output.xlsx')
+appendIdToTracxnData('tracxn_output.xlsx')
 
 const extractRequiredFields = (companyData) => {
     /**
@@ -206,7 +206,7 @@ const fetchCompaniesList = async(filters={}) => {
         return null;
     }
 }
-var from = 1;
+var from = 400;
 
 // while (true) {
 
@@ -239,7 +239,7 @@ var from = 1;
 //     }
 
 //     if (!companiesList?.result?.length) break;
-//     from += 1
+//     from += 20
 // }
 
 // if (fileURLToPath(import.meta.url) === process.argv[1]) {
