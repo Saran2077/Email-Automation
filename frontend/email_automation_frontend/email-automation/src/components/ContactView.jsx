@@ -1,26 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Linkedin, Building2, User, Briefcase, Calendar, MessageSquare, Trophy, TrendingUp } from 'lucide-react';
+import { Mail, Linkedin, Building2, User, Briefcase, Calendar, MessageSquare, Trophy, TrendingUp, Inbox, Send, Edit } from 'lucide-react';
 import TextArea from 'antd/es/input/TextArea';
 import { recipientAPI } from '../utils/apiLayer';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 
-export default function ContactView({ 
-  contact2 = {
-    "_id": {"$oid":"6781040caee848ecaf96e2ee"},
-    "recipientId": {"$numberInt":"117"},
-    "name": "Viswesh Ananthakrishnan",
-    "email": "user429@gmail.com",
-    "company": "Aurascape",
-    "designation": "Co-Founder and VP Product",
-    "linkedinHandle": "https://linkedin.com/in/viswesh",
-    "companyDomain": "aurascape.ai",
-    "shortBio": "Ex-Palo Alto Networks, Aruba, Juniper Networks, FireEye. IIT Varanasi BTech 1989, Syracuse University MSEE 1991, University of California, Berkeley, Haas School of Business MBA 2007",
-    "industry": "Enterprise Infrastructure>Cybersecurity>Data Security>AI Model Security",
-    "Description": "Provider of AI based security solutions. It is developing generative AI security solutions that will elevate organizations defense against evolving cyber threats, leaking of critical information, and compliance issues fortified by security expertise.",
-    "stage": "Contact",
-    "metrics": {"delivered":0,"opened":0,"clicked":0,"failed":0}
-  }
-}) {
+export default function ContactView() {
   const [stage, setStage] = useState(null);
   const navigate = useNavigate();
   const [note, setNote] = useState('');
@@ -29,12 +14,20 @@ export default function ContactView({
   const [editingIndex, setEditingIndex] = useState(null);
   const [contact, setContact] = useState({});
   const [metrics, setMetrics] = useState({});
+  const [emailHistory, setEmailHistory] = useState({ recipient: {}, emails: [] });
   const { id } = useParams();
+  const [expandedEmails, setExpandedEmails] = useState(new Set());
 
   useEffect(() => {
     fetchContact();
     fetchMetrics();
   }, [id])
+
+  useEffect(() => {
+    if (id && activeTab === 'emails') {
+        fetchEmailHistory();
+    }
+  }, [id, activeTab]);
 
   const fetchMetrics = async() => {
     try {
@@ -58,6 +51,15 @@ export default function ContactView({
       console.error(error);
     }
   }
+
+  const fetchEmailHistory = async () => {
+    try {
+        const response = await recipientAPI.getEmailHistory(id);
+        setEmailHistory(response);
+    } catch (error) {
+        console.error('Error fetching email history:', error);
+    }
+  };
 
   const handleAddNote = () => {
     if (note.trim()) {
@@ -105,6 +107,34 @@ export default function ContactView({
     Lead: 'bg-yellow-100 text-yellow-800',
     Deal: 'bg-green-100 text-green-800',
     Account: 'bg-purple-100 text-purple-800'
+  };
+
+  const toggleEmailExpansion = (emailId) => {
+    setExpandedEmails(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(emailId)) {
+            newSet.delete(emailId);
+        } else {
+            newSet.add(emailId);
+        }
+        return newSet;
+    });
+  };
+
+  const handleEditDraft = (email) => {
+    navigate('/mailbox', {
+        state: {
+            draftEmail: {
+                id: email._id,
+                subject: email.subject,
+                body: email.body,
+                to: email.to.email,
+                from: email.from,
+                isDraft: true
+            },
+            suppressComposeModal: true
+        }
+    });
   };
 
   return (
@@ -189,6 +219,15 @@ export default function ContactView({
                   : 'text-gray-500 hover:text-gray-700'}`}
             >
               <MessageSquare className="w-4 h-4" /> Notes
+            </button>
+            <button 
+              onClick={() => setActiveTab('emails')}
+              className={`py-4 px-2 -mb-px font-medium text-sm flex items-center gap-2 
+                ${activeTab === 'emails' 
+                  ? 'border-b-2 border-blue-600 text-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <Mail className="w-4 h-4" /> Emails
             </button>
           </div>
         </div>
@@ -326,6 +365,107 @@ export default function ContactView({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'emails' && (
+            <div className="max-w-4xl mx-auto">
+                <div className="space-y-4">
+                    {emailHistory.emails.map((email) => (
+                        <div key={email._id} className="bg-white rounded-lg shadow-sm mb-4 overflow-hidden border border-gray-200">
+                            <div 
+                                onClick={() => toggleEmailExpansion(email._id)}
+                                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"
+                            >
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-3">
+                                            <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
+                                                email.type === 'sent' ? 'bg-green-100 text-green-700' :
+                                                email.type === 'received' ? 'bg-blue-100 text-blue-700' :
+                                                email.type === 'draft' ? 'bg-amber-100 text-amber-700' :
+                                                'bg-gray-100 text-gray-700'
+                                            }`}>
+                                                {email.type.charAt(0).toUpperCase() + email.type.slice(1)}
+                                            </span>
+                                            <span className="font-medium text-gray-900">{email.subject}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {email.type === 'draft' && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleEditDraft(email);
+                                                    }}
+                                                    className="p-1.5 hover:bg-gray-200 rounded-full transition-colors"
+                                                    title="Edit Draft"
+                                                >
+                                                    <Edit className="h-4 w-4 text-gray-600" />
+                                                </button>
+                                            )}
+                                            <span className="text-sm text-gray-500">
+                                                {new Date(email.createdAt).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm text-gray-600 line-clamp-1 flex-1">
+                                            {email.body.replace(/<[^>]*>/g, '')}
+                                        </p>
+                                        {email.isStarred && (
+                                            <span className="text-yellow-400 flex-shrink-0">★</span>
+                                        )}
+                                        {expandedEmails.has(email._id) ? (
+                                            <ChevronUpIcon className="h-5 w-5 text-gray-400" />
+                                        ) : (
+                                            <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {expandedEmails.has(email._id) && (
+                                <div className="border-t border-gray-200">
+                                    <div className="p-4">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                                    email.type === 'sent' ? 'bg-green-100 text-green-700' :
+                                                    email.type === 'received' ? 'bg-blue-100 text-blue-700' :
+                                                    'bg-gray-100 text-gray-700'
+                                                }`}>
+                                                    {email.type.charAt(0).toUpperCase() + email.type.slice(1)}
+                                                </span>
+                                                {email.isStarred && (
+                                                    <span className="text-yellow-400">★</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div 
+                                            className="prose prose-sm max-w-none text-gray-700"
+                                            dangerouslySetInnerHTML={{ __html: email.body }}
+                                        />
+                                        {email.status.length > 0 && (
+                                            <div className="mt-4 flex gap-2">
+                                                {email.status.map((status, idx) => (
+                                                    <span 
+                                                        key={idx}
+                                                        className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full"
+                                                    >
+                                                        {status}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                    {emailHistory.emails.length === 0 && (
+                        <p className="text-center text-gray-500 py-8">No email history found</p>
+                    )}
+                </div>
             </div>
           )}
 

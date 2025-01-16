@@ -7,39 +7,33 @@ class MailboxService {
 
     async draftEmail(subject, body, to, from){
         try{
-            // First, find or create the sender recipient
-            // let fromRecipient = await Recipient.findOne({ email: from });
-            // if (!fromRecipient) {
-            //     fromRecipient = await Recipient.create({ 
-            //         email: from,
-            //         name: from.split('@')[0] // Basic name from email
-            //     });
-            // }
-
-            // Then, find or create the receiver recipient
             let toRecipient = await Recipient.findOne({ email: to });
             if (!toRecipient) {
                 toRecipient = await Recipient.create({ 
                     email: to,
-                    name: to.split('@')[0] // Basic name from email
+                    name: to.split('@')[0]
                 });
             }
 
-            // Now create the email with recipient IDs
+            // Generate a unique messageId for drafts
+            const draftMessageId = `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
             const payload = {
                 subject: subject,
                 body: body,
-                from: from, // Use the MongoDB ObjectId
-                to: toRecipient._id      // Use the MongoDB ObjectId
+                from: from,
+                to: toRecipient._id,
+                messageId: draftMessageId,
+                isDraft: true,
+                isSent: false
             }
 
-            console.log('Creating email with payload:', payload); // Debug log
+            console.log('Creating email with payload:', payload);
 
             const createDraft = await emailRepository.create(payload)
             return createDraft
-        }
-        catch(error){
-            console.error('Service Error:', error); // Debug log
+        } catch(error) {
+            console.error('Service Error:', error);
             throw error;
         }
     }

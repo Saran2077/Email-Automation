@@ -101,6 +101,18 @@ function MailboxView() {
     }
   }, [selectedEmail]);
 
+  useEffect(() => {
+    if (location.state?.draftEmail) {
+      const draftEmail = location.state.draftEmail;
+      setSelectedEmail(draftEmail);
+      setEditedEmail(draftEmail);
+      setActiveFolder('drafts');
+      setShowComposeModal(false);
+    } else if (!location.state?.suppressComposeModal) {
+      setShowComposeModal(true);
+    }
+  }, [location.state]);
+
   const fetchDraftEmails = async (showToast = false) => {
     try {
       setLoading(true);

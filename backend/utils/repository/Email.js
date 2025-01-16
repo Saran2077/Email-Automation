@@ -1,4 +1,5 @@
 import { Email } from '../models/Email.js';
+import { Recipient } from '../models/Recipient.js';
 
 class EmailRepository {
   // Create a new email
@@ -155,6 +156,40 @@ class EmailRepository {
       return await email.save();
     } catch (error) {
       throw new Error(`Error toggling starred status: ${error.message}`);
+    }
+  }
+
+  async getEmailsByRecipient(recipientId) {
+    try {
+        const recipient = await Recipient.findOne({ recipientId });
+        if (!recipient) {
+            throw new Error('Recipient not found');
+        }
+
+        const emails = await Email.find({
+            $or: [
+                { to: recipient._id },  // Using MongoDB _id
+            ]
+        })
+        .populate('to', 'name email')  // Populate recipient details
+        .sort({ createdAt: -1 })
+        .select('subject body status createdAt messageId isStarred isDraft isSent isReceived');
+
+        return {
+            recipient: {
+                id: recipient.recipientId,
+                name: recipient.name,
+                email: recipient.email
+            },
+            emails: emails.map(email => ({
+                ...email.toObject(),
+                type: email.isSent ? 'sent' : 
+                      email.isReceived ? 'received' : 
+                      email.isDraft ? 'draft' : 'unknown'
+            }))
+        };
+    } catch (error) {
+        throw new Error(`Error fetching emails by recipient: ${error.message}`);
     }
   }
 }
