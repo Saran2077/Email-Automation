@@ -3,7 +3,7 @@ import { Mail, Linkedin, Building2, User, Briefcase, Calendar, MessageSquare, Tr
 import TextArea from 'antd/es/input/TextArea';
 import { recipientAPI } from '../utils/apiLayer';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, ChevronDownIcon, ChevronUpIcon  } from '@heroicons/react/24/outline';
 
 export default function ContactView() {
   const [stage, setStage] = useState(null);
