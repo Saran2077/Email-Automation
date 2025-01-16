@@ -4,7 +4,7 @@ const campaignService = new CampaignService();
 
 
 
-class DashboardHandler {
+class CampaignHandler {
     async create(req, res, next) {
         try {
             const { data } = req.body;
@@ -58,4 +58,4 @@ class DashboardHandler {
 
 }
 
-export default DashboardHandler;
+export default CampaignHandler;

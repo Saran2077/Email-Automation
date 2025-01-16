@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { Counter } from './Counter.js';
 
-const userSchema = new mongoose.Schema({
+const campaignSchema = new mongoose.Schema({
   campaignId: {
     type: Number,
     unique: true
