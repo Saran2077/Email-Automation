@@ -418,7 +418,7 @@ function MailboxView() {
       const emailData = {
         emailId: email.id,
         subject: email.subject,
-        body: plainTextToHtml(email.body),
+        body: email.body,
         to: email.to,
         from: "betagamer580@gmail.com"
       };
@@ -456,8 +456,22 @@ function MailboxView() {
   const plainTextToHtml = (text) => {
     return text
       .split("\n")
-      .map((line) => `<p>${line}</p>`)
-      .join(""); // Wrap each line in <p> tags
+      .map(line => {
+        // Skip empty lines
+        if (!line.trim()) return '<br/>';
+        
+        // Handle basic formatting
+        line = line
+          // Convert URLs to links
+          .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>')
+          // Bold text between asterisks
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          // Italic text between underscores
+          .replace(/_(.*?)_/g, '<em>$1</em>');
+          
+        return `<p>${line}</p>`;
+      })
+      .join("");
   };
 
   const handleComposeEmail = async () => {
@@ -504,7 +518,7 @@ function MailboxView() {
       
       const emailData = {
         subject: newEmail.subject,
-        body: plainTextToHtml(newEmail.body),
+        body: newEmail.body, // The body is already in HTML format
         to: newEmail.to,
         from: "betagamer580@gmail.com"
       };
@@ -750,8 +764,17 @@ function MailboxView() {
                   </span>
                   <span className="text-xs text-gray-500 font-medium">{email.date}</span>
                 </div>
-                <div className="text-sm text-gray-800 font-medium line-clamp-1">{email.subject}</div>
-                <p className="text-sm text-gray-500 line-clamp-1">{email.preview}</p>
+                <div className="text-sm text-gray-800 font-medium line-clamp-1">
+                  {email.subject}
+                </div>
+                <div className="text-sm text-gray-600 line-clamp-2">
+                  <div 
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ 
+                      __html: email.preview 
+                    }}
+                  />
+                </div>
               </div>
             </div>
           ))}
@@ -831,16 +854,23 @@ function MailboxView() {
 
               {/* Body */}
               <div className="mt-4 flex flex-col h-[300px] relative">
-                <textarea 
-                  className="w-full h-full outline-none text-sm resize-none p-2"
-                  value={editedEmail.body}
-                  onChange={(e) => {
-                    handleInputChange('body', e.target.value);
+                <div
+                  className={`w-full h-full outline-none text-sm p-2 overflow-y-auto ${
+                    formErrors.body ? 'border-red-300' : ''
+                  }`}
+                  contentEditable={true}
+                  onInput={(e) => {
+                    handleInputChange('body', e.currentTarget.innerHTML);
                     if (formErrors.body) {
                       setFormErrors(prev => ({ ...prev, body: '' }));
                     }
                   }}
-                  placeholder="Write your email..."
+                  dangerouslySetInnerHTML={{ __html: editedEmail.body }}
+                  style={{
+                    minHeight: '300px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '0.375rem'
+                  }}
                 />
                 {formErrors.body && (
                   <div className="text-red-500 text-sm mt-2">{formErrors.body}</div>
@@ -1008,16 +1038,23 @@ function MailboxView() {
 
               {/* Body */}
               <div className="mt-4 h-[300px] flex flex-col relative">
-                <textarea 
-                  className={`w-full h-full outline-none text-sm resize-none p-2 ${formErrors.body ? 'border-red-300' : ''}`}
-                  value={newEmail.body}
-                  onChange={(e) => {
-                    handleComposeInputChange('body', e.target.value);
+                <div
+                  className={`w-full h-full outline-none text-sm p-2 overflow-y-auto ${
+                    formErrors.body ? 'border-red-300' : ''
+                  }`}
+                  contentEditable={true}
+                  onInput={(e) => {
+                    handleComposeInputChange('body', e.currentTarget.innerHTML);
                     if (formErrors.body) {
                       setFormErrors(prev => ({ ...prev, body: '' }));
                     }
                   }}
-                  placeholder="Write your email..."
+                  dangerouslySetInnerHTML={{ __html: newEmail.body }}
+                  style={{
+                    minHeight: '300px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '0.375rem'
+                  }}
                 />
                 {formErrors.body && (
                   <span className="text-red-500 text-xs mt-1">{formErrors.body}</span>
