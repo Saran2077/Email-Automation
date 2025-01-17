@@ -14,8 +14,7 @@ class CampaignRepository {
   // Get a campaign by ID
   async getById(campaignId) {
     try {
-      return await Campaign.findOne({ campaignId })
-        .populate('recipients');
+      return await Campaign.findOne({ campaignId });
     } catch (error) {
       throw new Error(`Error fetching campaign: ${error.message}`);
     }
@@ -54,12 +53,11 @@ class CampaignRepository {
         { campaignId },
         { $set: updateData },
         { new: true, runValidators: true }
-      ).populate('recipients');
+      );
 
       if (!campaign) {
         throw new Error('Campaign not found');
       }
-
       return campaign;
     } catch (error) {
       throw new Error(`Error updating campaign: ${error.message}`);
@@ -86,7 +84,7 @@ class CampaignRepository {
         { campaignId },
         { $addToSet: { recipientsList: { $each: recipientIds } } },
         { new: true }
-      ).populate('recipients');
+      );
 
       if (!campaign) {
         throw new Error('Campaign not found');

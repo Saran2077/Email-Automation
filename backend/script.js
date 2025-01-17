@@ -1,6 +1,7 @@
 import XLSX from 'xlsx';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
 
 const baseUrl = 'https://platform.tracxn.com/api/2.2/playground';
 
@@ -30,7 +31,92 @@ export function convertTracxnToExcel(tracxnData, outputPath) {
     }
 }
 
-const tracxnData = []
+export function appendTracxnToExcel(tracxnData, outputPath) {
+    try {
+        // Validate input
+        if (!Array.isArray(tracxnData) || tracxnData.length === 0) {
+            throw new Error('Invalid input: Tracxn data must be a non-empty array');
+        }
+
+        let workbook;
+        let existingData = [];
+
+        // Check if file exists and read existing data
+        if (existsSync(outputPath)) {
+            workbook = XLSX.readFile(outputPath);
+            const sheetName = workbook.SheetNames[0];
+            existingData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        } else {
+            workbook = XLSX.utils.book_new();
+        }
+
+        // Combine existing data with new data
+        const combinedData = [...existingData, ...tracxnData];
+
+        // Convert combined data to worksheet
+        const worksheet = XLSX.utils.json_to_sheet(combinedData);
+
+        // Remove existing sheet if it exists
+        if (workbook.SheetNames.length > 0) {
+            workbook.SheetNames = [];
+            workbook.Sheets = {};
+        }
+
+        // Add the worksheet to the workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Tracxn Data');
+
+        // Write to Excel file
+        XLSX.writeFile(workbook, outputPath);
+
+        console.log(`Excel file successfully updated at: ${outputPath}`);
+    } catch (error) {
+        console.error('Error appending Tracxn data to Excel:', error.message);
+        throw error;
+    }
+}
+
+export function appendIdTracxnToExcel(outputPath) {
+    try {
+        let workbook;
+        let existingData = [];
+
+        // Check if file exists and read existing data
+        if (existsSync(outputPath)) {
+            workbook = XLSX.readFile(outputPath);
+            const sheetName = workbook.SheetNames[0];
+            existingData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        } else {
+            workbook = XLSX.utils.book_new();
+        }
+
+        // Combine existing data with new data
+        const combinedData = existingData?.map((data, index) => ({id: index, ...data}))
+
+        // Convert combined data to worksheet
+        const worksheet = XLSX.utils.json_to_sheet(combinedData);
+
+        // Remove existing sheet if it exists
+        if (workbook.SheetNames.length > 0) {
+            workbook.SheetNames = [];
+            workbook.Sheets = {};
+        }
+
+        // Add the worksheet to the workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Tracxn Data');
+
+        // Write to Excel file
+        XLSX.writeFile(workbook, outputPath);
+
+        console.log(`Excel file successfully updated at: ${outputPath}`);
+    } catch (error) {
+        console.error('Error appending Tracxn data to Excel:', error.message);
+        throw error;
+    }
+}
+
+appendIdTracxnToExcel("tracxn_output.xlsx")
+
+
 const extractRequiredFields = (companyData) => {
     /**
      * Extract only the required fields from the Tracxn API response
@@ -107,62 +193,40 @@ const fetchCompaniesList = async(filters={}) => {
         return null;
     }
 }
-var from = 800;
+var from = 2720;
 
-while (true) {
+// while (true) {
 
-    const companiesList = await fetchCompaniesList({ from: from });
-    const tracxnData = []
+//     const companiesList = await fetchCompaniesList({ from: from });
+//     const tracxnData = []
     
-    for (const company of companiesList?.result || []) {
-        const processedData = extractRequiredFields(company);
-        const employees = processedData?.employeeList?.map((employee) => {
-            const { employeeList, ...rest } = processedData; 
-            return {
-              ...{
-                employeeName: employee?.name,
-                short_bio: employee?.shortBio,
-                employeeLinkedIn: employee?.profileLinks?.linkedinHandle,
-                employeeDesignation: employee?.designation,
-                employeeKeyPeople: employee?.isKeyPeople,
-                employeeFoundingMember: employee?.isFoundingMember,
-              },
-              ...rest,
-            };
-          });
+//     for (const company of companiesList?.result || []) {
+//         const processedData = extractRequiredFields(company);
+//         const employees = processedData?.employeeList?.map((employee) => {
+//             const { employeeList, ...rest } = processedData; 
+//             return {
+//               ...{
+//                 employeeName: employee?.name,
+//                 short_bio: employee?.shortBio,
+//                 employeeLinkedIn: employee?.profileLinks?.linkedinHandle,
+//                 employeeDesignation: employee?.designation,
+//                 employeeKeyPeople: employee?.isKeyPeople,
+//                 employeeFoundingMember: employee?.isFoundingMember,
+//               },
+//               ...rest,
+//             };
+//           });
           
-        if (employees.length > 0) {
-            tracxnData.push(...employees);
-        }
-    }
-    if (tracxnData.length > 0) {
-        appendTracxnToExcel(tracxnData, "tracxn_output.xlsx")
-    }
+//         if (employees.length > 0) {
+//             tracxnData.push(...employees);
+//         }
+//     }
+//     if (tracxnData.length > 0) {
+//         appendTracxnToExcel(tracxnData, "tracxn_output.xlsx")
+//     }
 
-    if (!companiesList?.result?.length) break;
-    from += 20
-}
-
-console.log(tracxnData)
-
-if (fileURLToPath(import.meta.url) === process.argv[1]) {
-    const inputFile = process.argv[2];
-    const outputFile = process.argv[3];
-
-    if (inputFile) {
-        // If input file is provided, read from file
-        try {
-            const jsonData = JSON.parse(readFileSync(inputFile, 'utf8'));
-            
-            convertTracxnToExcel(jsonData, outputFile || 'tracxn_output.xlsx');
-        } catch (error) {
-            console.error('Error processing file:', error.message);
-            process.exit(1);
-        }
-    } else {
-        // If no input file is provided, use sample data
-        convertTracxnToExcel(tracxnData, 'tracxn_output.xlsx');
-    }
-}
+//     if (!companiesList?.result?.length) break;
+//     from += 20
+// }
 
 export default convertTracxnToExcel;

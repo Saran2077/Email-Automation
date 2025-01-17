@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import CreateCampaignModal from './CreateCampaignModal'
-import { scrapAPI, recipientAPI } from '../utils/apiLayer'
+import { scrapAPI, recipientAPI, campaignAPI } from '../utils/apiLayer'
 import FilterModel from './FilterModel'
 import { Descriptions, Pagination } from 'antd'
 
@@ -156,7 +156,7 @@ function CustomerScraper() {
     }
   }
 
-  const handleAddToRecipientsSubmit = async (selectedStage) => {
+  const handleAddToRecipientsSubmit = async (seletedCampaign) => {
     setLoading(true)
     try {
       const recipientsToCreate = selectedCustomers.map(customer => {
@@ -167,15 +167,23 @@ function CustomerScraper() {
           profileLinks: customer.profileLinks,
           shortBio: customer.shortBio
         })
-        payload.stage = selectedStage
+        payload.stage = 'Contact'
         return payload
       })
 
       // Modified API call to include template
-      await recipientAPI.bulkCreate({
+      const response = await recipientAPI.bulkCreate({
         recipients: recipientsToCreate,
         template: templatePayload
       });
+
+      const resipients = response?.createdRecipients?.map((recipient) => recipient._id);
+
+      if (seletedCampaign) {
+        const campaignUpdate = await campaignAPI.add(seletedCampaign, { recipientIds: resipients })
+      }
+
+
 
       toast.success(`Successfully created ${recipientsToCreate.length} recipients`)
       setShowCampaignModal(false)
@@ -236,7 +244,7 @@ function CustomerScraper() {
               <span className="ml-2">Select All</span>
             </label>
           </div>
-          <div className='overflow-x-auto'>
+          <div className='overflow-x-auto w-fit'>
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -248,6 +256,8 @@ function CustomerScraper() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LinkedIn URL</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Description</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Primary Industry</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business Models</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company LinkedIn URL</th>
               </tr>
@@ -275,6 +285,8 @@ function CustomerScraper() {
                     <td className="px-6 py-4 whitespace-nowrap">{employee?.profileLinks?.linkedinHandle || "--"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{company?.Name || "--"}</td>
                     <td className="px-6 py-4 min-w-96 break-words">{company?.Description || "--"}</td>
+                    <td className="px-6 py-4 min-w-96 break-words">{company?.Primary_Industry || "--"}</td>
+                    <td className="px-6 py-4 min-w-[450px] break-words">{company?.Business_Models || "--"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{company?.Domain || "--"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{company?.LinkedIn_URL || "--"}</td>
                   </tr>

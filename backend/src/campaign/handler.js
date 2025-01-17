@@ -23,13 +23,6 @@ class CampaignHandler {
                 });
             }
 
-            if (!data.recipientsList?.length) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Recipients list is required and must not be empty'
-                });
-            }
-
             const campaign = await campaignService.create(data);
             return res.status(201).json({
                 status: 'success',
@@ -54,7 +47,7 @@ class CampaignHandler {
 
     async list(req, res) {
         try {
-            const { page = 1, limit = 10, sort = '-createdAt' } = req.query;
+            const { page = 1, limit = 10 } = req.query;
             
             // Validate pagination parameters
             const pageNum = parseInt(page);
@@ -115,22 +108,42 @@ class CampaignHandler {
         }
     }
 
+    async addRecipient(req, res) {
+        try {
+            const { id } = req.params;
+
+            const campaign = await campaignService.getById(id);
+            
+            if (!campaign) {
+                return res.status(404).json({
+                    status: 'error',
+                    message: 'Campaign not found'
+                });
+            }
+
+            const { recipientIds } = req.body;
+
+            const updateCampaign = await campaignService.addRecipients(id, recipientIds);
+
+
+            return res.status(200).json({
+                status: 'success',
+                data: updateCampaign
+            });
+        } catch (error) {
+            console.error('Get campaign error:', error);
+            return res.status(500).json({
+                status: 'error',
+                message: 'Failed to fetch campaign',
+                ...(process.env.NODE_ENV === 'development' && { detail: error.message })
+            });
+        }
+    }
+
     async update(req, res) {
         try {
             const { id } = req.params;
             const { data } = req.body;
-
-            if (data.recipientsList) {
-                const hasInvalidIds = data.recipientsList.some(
-                    rid => !mongoose.Types.ObjectId.isValid(rid)
-                );
-                if (hasInvalidIds) {
-                    return res.status(400).json({
-                        status: 'error',
-                        message: 'Invalid recipient ID(s) in recipients list'
-                    });
-                }
-            }
 
             const campaign = await campaignService.update(id, data);
             
@@ -158,7 +171,7 @@ class CampaignHandler {
     async delete(req, res) {
         try {
             const { id } = req.params;
-            
+
             const campaign = await campaignService.delete(id);
             
             if (!campaign) {

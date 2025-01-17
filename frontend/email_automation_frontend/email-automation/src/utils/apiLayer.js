@@ -106,8 +106,46 @@ export const scrapAPI = {
       throw error.response?.data || error.message;
     }
   }
-}
-;
+};
+
+export const campaignAPI = {
+  list: async (filters={}) => {
+    try {
+      const response = await api.post('/v1/campaign', filters);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  create: async (data) => {
+    try {
+      const response = await api.post('/v1/campaign/create', data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  update: async (id, data) => {
+    try {
+      const response = await api.post(`/v1/campaign/update/${id}`, data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  add: async (id, data) => {
+    try {
+      const response = await api.post(`/v1/campaign/add/${id}`, data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+};
+
 export const dashboardAPI = {
   metrics: async () => {
     try {
