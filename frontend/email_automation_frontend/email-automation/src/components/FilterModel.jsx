@@ -8,6 +8,7 @@ const { TextArea } = Input;
 
 const FilterModal = ({ onApply, onClose, initialFilters = {}, visible = false, setCustomers }) => {
   const [isPromptOpen, setIsPromptOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [promptInput, setPromptInput] = useState('');
   const [filters, setFilters] = useState({
     country: [],
@@ -56,44 +57,51 @@ const FilterModal = ({ onApply, onClose, initialFilters = {}, visible = false, s
   };
 
   const handlePromptSubmit = async() => {
-    const response = await scrapAPI.fetchFilteredCustomers(promptInput);
-    console.log("response", response);
-    const newCampaignId = Object.values(response.reduce((acc, customer) => {
-      const key = customer.name;
-      if (!acc[key]) {
-        acc[key] = {
-          Name: customer.name,
-          Description: customer.description,
-          Primary_Industry: customer.primaryIndustry,
-          Business_Models: customer.businessModels,
-          Domain: customer.domain,
-          LinkedIn_URL: customer.linkedInURL,
-          // Annual_Revenue: customer.Annual_Revenue,
-          Employee_List: []
-        };
-      }
-      acc[key].Employee_List.push({
-        designation: customer.employeeDesignation,
-        id: customer.id,
-        name: customer.employeeName,
+    setIsLoading(true);
+    try {
+      const response = await scrapAPI.fetchFilteredCustomers(promptInput);
+      console.log("response", response);
+      const newCampaignId = Object.values(response.reduce((acc, customer) => {
+        const key = customer.name;
+        if (!acc[key]) {
+          acc[key] = {
+            Name: customer.name,
+            Description: customer.description,
+            Primary_Industry: customer.primaryIndustry,
+            Business_Models: customer.businessModels,
+            Domain: customer.domain,
+            LinkedIn_URL: customer.linkedInURL,
+            // Annual_Revenue: customer.Annual_Revenue,
+            Employee_List: []
+          };
+        }
+        acc[key].Employee_List.push({
+          designation: customer.employeeDesignation,
+          id: customer.id,
+          name: customer.employeeName,
 
-        profileLinks: {profileLinks: customer?.employeeLinkedIn },
-        shortBio: customer.short_bio,
-        isKeyPeople: customer.employeeKeyPeople,
-        isFoundingMember: customer.employeeFoundingMember,
-      });
-      return acc;
-    }, {}))
+          profileLinks: {profileLinks: customer?.employeeLinkedIn },
+          shortBio: customer.short_bio,
+          isKeyPeople: customer.employeeKeyPeople,
+          isFoundingMember: customer.employeeFoundingMember,
+        });
+        return acc;
+      }, {}))
 
-    setCustomers({
-      meta: {
-        total_rows: 0,
-      },
-      data: newCampaignId
-    })
+      setCustomers({
+        meta: {
+          total_rows: 0,
+        },
+        data: newCampaignId
+      })
 
-    setIsPromptOpen(false);
-    setPromptInput('');
+      setIsPromptOpen(false);
+      setPromptInput('');
+    } catch (error) {
+      console.error("Error fetching customers", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = () => {
@@ -236,7 +244,8 @@ const FilterModal = ({ onApply, onClose, initialFilters = {}, visible = false, s
             key="submit"
             type="primary"
             onClick={handlePromptSubmit}
-            icon={<SearchOutlined />}
+            icon={!isLoading  && <SearchOutlined />}
+            loading={isLoading}
           >
             Apply Prompt
           </Button>,

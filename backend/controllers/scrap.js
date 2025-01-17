@@ -206,7 +206,7 @@ const fetchFilteredCompanies = async(req, res) => {
         if (!prompt) {
             return res.status(400).json({ error: "Prompt is required" });
         }
-        const baseUrl = 'https://9c64-2001-4490-4e81-e973-382b-803c-7835-a17.ngrok-free.app'
+        const baseUrl = 'http://127.0.0.1:5000'
         const endpoint = `${baseUrl}/process_query`;
 
         console.log({ query: prompt }, endpoint)

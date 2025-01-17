@@ -20,12 +20,12 @@ const Sidebar = () => {
       icon: ChartBarIcon,
       description: 'View and manage recipients'
     },
-    { 
-      name: 'Lists', 
-      href: '/lists', 
-      icon: Squares2X2Icon,
-      description: 'View and manage campaigns'
-    },
+    // { 
+    //   name: 'Lists', 
+    //   href: '/lists', 
+    //   icon: Squares2X2Icon,
+    //   description: 'View and manage campaigns'
+    // },
     { 
       name: 'Campaign', 
       href: '/campaign', 
