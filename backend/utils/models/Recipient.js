@@ -103,6 +103,11 @@ const recipientSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Email'
     }]
+  },
+  createdById: {
+    type: Number,
+    ref: 'User',
+    required: true
   }
 }, {
   timestamps: true

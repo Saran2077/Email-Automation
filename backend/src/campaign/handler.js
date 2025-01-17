@@ -1,13 +1,20 @@
 import CampaignService from "./service.js";
 import mongoose from 'mongoose';
+import JsonWebToken from "../../middleware/jwt.js";
 
 const campaignService = new CampaignService();
+const jwt = new JsonWebToken();
 
 class CampaignHandler {
     async create(req, res) {
         try {
-            const { data } = req.body;
-            
+            const { body, headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const {data} = body;
+            data.createdById = userId;
+
+
             // Inline validation
             if (!data) {
                 return res.status(400).json({
@@ -47,8 +54,10 @@ class CampaignHandler {
 
     async list(req, res) {
         try {
-            const { page = 1, limit = 10 } = req.query;
-            
+            const { page = 1, limit = 10, sort = '-createdAt' } = req.query;
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
             // Validate pagination parameters
             const pageNum = parseInt(page);
             const limitNum = parseInt(limit);
@@ -61,7 +70,7 @@ class CampaignHandler {
             }
 
             const campaignList = await campaignService.list(
-                {},
+                {createdById: userId},
                 pageNum,
                 limitNum
             );
@@ -84,8 +93,12 @@ class CampaignHandler {
     async getById(req, res) {
         try {
             const { id } = req.params;
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const filterQuery = { campaignId: id, createdById: userId };
 
-            const campaign = await campaignService.getById(id);
+            const campaign = await campaignService.getById(filterQuery);
             
             if (!campaign) {
                 return res.status(404).json({
@@ -144,8 +157,24 @@ class CampaignHandler {
         try {
             const { id } = req.params;
             const { data } = req.body;
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const filterQuery = { campaignId: id, createdById: userId };
 
-            const campaign = await campaignService.update(id, data);
+            if (data.recipientsList) {
+                const hasInvalidIds = data.recipientsList.some(
+                    rid => !mongoose.Types.ObjectId.isValid(rid)
+                );
+                if (hasInvalidIds) {
+                    return res.status(400).json({
+                        status: 'error',
+                        message: 'Invalid recipient ID(s) in recipients list'
+                    });
+                }
+            }
+
+            const campaign = await campaignService.update(filterQuery, data);
             
             if (!campaign) {
                 return res.status(404).json({
@@ -171,8 +200,12 @@ class CampaignHandler {
     async delete(req, res) {
         try {
             const { id } = req.params;
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const filterQuery = { campaignId: id, createdById: userId };
 
-            const campaign = await campaignService.delete(id);
+            const campaign = await campaignService.delete(filterQuery);
             
             if (!campaign) {
                 return res.status(404).json({

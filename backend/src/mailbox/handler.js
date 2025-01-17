@@ -1,13 +1,17 @@
 import MailboxService from "./service.js";
 import { sendMail } from "../../utils/sendMail.js";
+import JsonWebToken from "../../middleware/jwt.js";
 
 const service = new MailboxService()
+const jwt = new JsonWebToken();
 class MailboxHandler {
 
     async draftEmail(req, res){
 
         try{
-
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
             const { subject, body, to, from } = req.body;
 
             if (!subject || !body || !to) {
@@ -17,7 +21,7 @@ class MailboxHandler {
                 });
             }
 
-            const response = await service.draftEmail(subject, body, to, from)
+            const response = await service.draftEmail(subject, body, to, from, userId)
             
             res.status(200).json({
                 success: true,
@@ -37,7 +41,11 @@ class MailboxHandler {
     async listDraftEmail(req, res){
         try{
 
-            const response = await service.listDraftEmail()
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+
+            const response = await service.listDraftEmail(userId)
             res.status(200).json({
                 success: true,
                 data: response
@@ -55,6 +63,9 @@ class MailboxHandler {
     async updateDraftEmail(req, res){
 
         try{
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
 
             const { emailId, subject, body, to, from } = req.body;
 
@@ -65,7 +76,7 @@ class MailboxHandler {
                 });
             }
 
-            const response = await service.updateDraftEmail(emailId, subject, body, to, from)
+            const response = await service.updateDraftEmail(emailId, subject, body, to, from, userId)
             
             res.status(200).json({
                 success: true,
@@ -85,13 +96,15 @@ class MailboxHandler {
     async sendEmail(req, res) {
         try {
             const { emailId, subject, body, to, from } = req.body;
-            
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
             // Send email using external service
             const emailSendResp = await sendMail(req.body);
             console.log("emailSendResp===>", emailSendResp, from);
 
             // Update or create email in database
-            const storeSentMail = await service.sendEmail(emailId, subject, body, to, from, emailSendResp);
+            const storeSentMail = await service.sendEmail(emailId, subject, body, to, from, emailSendResp, userId);
 
             res.status(200).json({
                 success: true,
@@ -110,8 +123,10 @@ class MailboxHandler {
 
     async listSentEmail(req, res){
         try{
-
-            const response = await service.listSentEmail()
+            const { headers } = req;    
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const response = await service.listSentEmail(userId)
             res.status(200).json({
                 success: true,
                 data: response
@@ -128,7 +143,10 @@ class MailboxHandler {
 
     async listStarEmail(req, res) {
         try {
-            const response = await service.listStarEmail()
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const response = await service.listStarEmail(userId)
             res.status(200).json({
                 success: true,
                 data: response
@@ -146,7 +164,10 @@ class MailboxHandler {
         try {
             const { id } = req.params;
             console.log(id)
-            const star = await service.starEmail(id);
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const star = await service.starEmail(id, userId);
 
             res.status(200).json({
                 success: true,
@@ -164,7 +185,10 @@ class MailboxHandler {
     async getEmailById(req, res) {
         try {
             const { id } = req.params;
-            const email = await service.getEmailById(id);
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const email = await service.getEmailById(id, userId);
 
             res.status(200).json({
                 success: true,
@@ -185,7 +209,10 @@ class MailboxHandler {
 
     async inboxEmail(req, res) {
         try{
-            const response = await service.inboxEmail()
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const response = await service.inboxEmail(userId)
             res.status(200).json({
                 success: true,
                 data: response

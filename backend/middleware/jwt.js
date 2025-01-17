@@ -18,4 +18,4 @@ class JsonWebToken {
   }
 }
 
-export default new JsonWebToken(); 
+export default JsonWebToken; 

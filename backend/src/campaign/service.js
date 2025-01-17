@@ -6,52 +6,43 @@ class CampaignService {
             const campaign = await CampaignRepository.create(campaignData);
             return campaign;
         } catch (error) {
-            throw new Error(error);
+            throw error;
         }
     }
     
     async list(filters={}, page, limit) {
         try {
             const campaign = await CampaignRepository.list(filters, page, limit);
-            return campaign;
+           return campaign;
         } catch (error) {
-            throw new Error(error);
+            throw error;
         }
     }
     
-    async getById(campaignId) {
+    async getById(filterQuery) {
         try {
-            const campaign = await CampaignRepository.getById(campaignId);
+            const campaign = await CampaignRepository.findOne(filterQuery);
             return campaign;
         } catch (error) {
-            throw new Error(error);
+            throw error;
         }
     }
     
-    async update(campaignId, updateData) {
+    async update(filterQuery, updateData) {
         try {
-            const campaign = await CampaignRepository.update(campaignId, updateData);
+            const campaign = await CampaignRepository.update(filterQuery, updateData);
             return campaign;
         } catch (error) {
-            throw new Error(error);
-        }
-    }
-
-    async addRecipients(campaignId, recipientIds) {
-        try {
-            const campaign = await CampaignRepository.addRecipients(campaignId, recipientIds);
-            return campaign;
-        } catch (error) {
-            throw new Error(error);
+            throw error;
         }
     }
     
-    async delete(campaignId) {
+    async delete(filterQuery) {
         try {
-            const campaign = await CampaignRepository.delete(campaignId);
+            const campaign = await CampaignRepository.delete(filterQuery);
             return campaign;
         } catch (error) {
-            throw new Error(error);
+            throw error;
         }
     }
 }

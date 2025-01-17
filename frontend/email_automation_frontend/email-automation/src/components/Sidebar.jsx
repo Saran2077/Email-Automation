@@ -1,11 +1,51 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { UsersIcon, InboxIcon, ChartBarIcon, ChevronLeftIcon, ChevronRightIcon, Bars3Icon, MegaphoneIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  UsersIcon, 
+  InboxIcon, 
+  ChartBarIcon, 
+  ChevronLeftIcon, 
+  ChevronRightIcon, 
+  Bars3Icon, 
+  MegaphoneIcon, 
+  Squares2X2Icon,
+  UserCircleIcon,
+  ArrowRightOnRectangleIcon,
+  Cog6ToothIcon
+} from '@heroicons/react/24/outline';
+import { toast } from 'react-toastify';
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Get user info from localStorage
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        // Decode the JWT token to get user info
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        const decodedToken = JSON.parse(jsonPayload);
+        setUserInfo(decodedToken);
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    toast.success('Logged out successfully');
+    navigate('/login');
+  };
 
   const navigation = [
     { 
@@ -20,12 +60,6 @@ const Sidebar = () => {
       icon: ChartBarIcon,
       description: 'View and manage recipients'
     },
-    // { 
-    //   name: 'Lists', 
-    //   href: '/lists', 
-    //   icon: Squares2X2Icon,
-    //   description: 'View and manage campaigns'
-    // },
     { 
       name: 'Campaign', 
       href: '/campaign', 
@@ -38,6 +72,21 @@ const Sidebar = () => {
       icon: InboxIcon,
       description: 'Access your mailbox'
     },
+  ];
+
+  const userNavigation = [
+    {
+      name: 'Profile',
+      href: '/profile',
+      icon: UserCircleIcon,
+      description: 'View and edit your profile'
+    },
+    {
+      name: 'Settings',
+      href: '/settings',
+      icon: Cog6ToothIcon,
+      description: 'Manage your settings'
+    }
   ];
 
   const NavigationItem = ({ item }) => {
@@ -109,7 +158,7 @@ const Sidebar = () => {
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 ">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
           {!isCollapsed && (
             <h1 className="text-xl font-bold text-gray-800">
               Email Automation
@@ -133,18 +182,34 @@ const Sidebar = () => {
           {navigation.map((item) => (
             <NavigationItem key={item.name} item={item} />
           ))}
+          
+          {/* Divider */}
+          <div className="my-4 border-t border-gray-200" />
+          
+          {/* User Navigation */}
+          {userNavigation.map((item) => (
+            <NavigationItem key={item.name} item={item} />
+          ))}
         </nav>
 
-        {/* Footer */}
+        {/* Footer with User Info */}
         <div className="border-t border-gray-200 p-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-              <UsersIcon className="w-4 h-4 text-blue-600" />
+              <UserCircleIcon className="w-4 h-4 text-blue-600" />
             </div>
             {!isCollapsed && (
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700">Admin User</p>
-                <p className="text-xs text-gray-500">admin@example.com</p>
+                <p className="text-sm font-medium text-gray-700">
+                  {userInfo?.email || 'Loading...'}
+                </p>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center text-xs text-red-500 hover:text-red-600 mt-1"
+                >
+                  <ArrowRightOnRectangleIcon className="w-4 h-4 mr-1" />
+                  Logout
+                </button>
               </div>
             )}
           </div>

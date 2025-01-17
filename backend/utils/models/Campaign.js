@@ -4,7 +4,8 @@ import { Counter } from './Counter.js';
 const campaignSchema = new mongoose.Schema({
   campaignId: {
     type: Number,
-    unique: true
+    unique: true,
+    required: true
   },
   name: {
     type: String,
@@ -72,6 +73,11 @@ const campaignSchema = new mongoose.Schema({
   active: {
     type: Boolean,
     default: true
+  },
+  createdById: {
+    type: Number,
+    ref: 'User',
+    required: true
   }
 }, {
   timestamps: true

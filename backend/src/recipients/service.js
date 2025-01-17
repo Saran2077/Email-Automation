@@ -3,16 +3,16 @@ import RecipientRepository from "../../utils/repository/Recipient.js";
 
 const emailRepository = new EmailRepository();
 class RecipientService {
-    async createRecipient(recipient) {
-        return await RecipientRepository.create(recipient);
+    async createRecipient(body) {
+        return await RecipientRepository.create(body);
     }
 
-    async getRecipient(id) {
-        return await RecipientRepository.getById(id);
+    async getRecipient(id, userId) {
+        return await RecipientRepository.getById(id, userId);
     }
 
-    async getRecipientByEmail(email) {
-        return await RecipientRepository.getByEmail(email);
+    async getRecipientByEmail(email, userId) {
+        return await RecipientRepository.getByEmail(email, userId);
     }
 
     async updateRecipient(id, recipient) {
@@ -31,9 +31,9 @@ class RecipientService {
         return await RecipientRepository.bulkCreate(recipients);
     }
 
-    async getEmailsByRecipient(recipientId) {
+    async getEmailsByRecipient(recipientId, userId) {
         try {
-            return await emailRepository.getEmailsByRecipient(recipientId);
+            return await emailRepository.getEmailsByRecipient(recipientId, userId);
         } catch (error) {
             console.error('Service error in getting emails:', error);
             throw error;

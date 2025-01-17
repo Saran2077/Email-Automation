@@ -145,9 +145,9 @@ class EmailRepository {
   }
 
   // Toggle starred status
-  async toggleStarred(emailId) {
+  async toggleStarred(emailId, userId) {
     try {
-      const email = await Email.findOne({ emailId });
+      const email = await Email.findOne({ emailId, createdById: userId });
       if (!email) {
         throw new Error('Email not found');
       }
@@ -159,9 +159,9 @@ class EmailRepository {
     }
   }
 
-  async getEmailsByRecipient(recipientId) {
+  async getEmailsByRecipient(recipientId, userId) {
     try {
-        const recipient = await Recipient.findOne({ recipientId });
+        const recipient = await Recipient.findOne({ recipientId, createdById: userId });
         if (!recipient) {
             throw new Error('Recipient not found');
         }

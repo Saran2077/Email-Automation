@@ -3,16 +3,23 @@ import DashboardService from "../dashboard/service.js";
 import { getAllCustomFields, getContactsData, updateContact } from "../services/activeCampaign.js";
 import RecipientService from "./service.js";
 import EmailGenerationService from "../email_generation/service.js";
+import JsonWebToken from "../../middleware/jwt.js";
 
 const recipientService = new RecipientService();
 const emailService = new EmailRepository();
 const emailGenerationService = new EmailGenerationService();
+const jwt = new JsonWebToken();
 
 class RecipientHandler {
     
     async createRecipient(req, res, next) {
         try {
-            const recipient = await recipientService.createRecipient(req.body);
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const {body} = req;
+            body.createdById = userId;
+            const recipient = await recipientService.createRecipient(body);
             res.status(201).json(recipient);
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -21,7 +28,10 @@ class RecipientHandler {
 
     async getRecipient(req, res, next) {
         try {
-            const recipient = await recipientService.getRecipient(req.params.id);
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const recipient = await recipientService.getRecipient(req.params.id, userId);
             res.status(200).json(recipient);
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -30,7 +40,10 @@ class RecipientHandler {
 
     async getRecipientByEmail(req, res, next) {
         try {
-            const recipient = await recipientService.getRecipientByEmail(req.params.email);
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const recipient = await recipientService.getRecipientByEmail(req.params.email, userId);
             res.status(200).json(recipient);
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -85,8 +98,11 @@ class RecipientHandler {
 
     async listRecipients(req, res, next) {
         try {
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
             const { page = 1, limit = 10, search, stage } = req.query;
-            const filters = {};
+            const filters = { createdById: userId };
     
             // Add search filter for name, email, and company using MongoDB $or operator
             if (search) {
@@ -160,16 +176,19 @@ class RecipientHandler {
     async bulkCreateRecipients(req, res, next) {
         try {
             const { recipients, template } = req.body;
-            
-            if (!Array.isArray(recipients)) {
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const recipientsWithUserId = recipients.map(recipient => ({ ...recipient, createdById: userId }));  
+            if (!Array.isArray(recipientsWithUserId)) {
                 throw new Error('Recipients must be an array');
             }
 
-            if (recipients.length === 0) {
+            if (recipientsWithUserId.length === 0) {
                 throw new Error('No recipients provided');
             }
 
-            const createdRecipients = await recipientService.bulkCreateRecipients(recipients);
+            const createdRecipients = await recipientService.bulkCreateRecipients(recipientsWithUserId);
             console.log(createdRecipients);
             //from created recipients iterate over each recipient and store the recipientId in one variable
             const recipientIds = createdRecipients.map(recipient => recipient.recipientId);
@@ -186,7 +205,10 @@ class RecipientHandler {
     async getEmailsByRecipient(req, res, next) {
         try {
             const { id } = req.params;
-            const emails = await recipientService.getEmailsByRecipient(id);
+            const { headers } = req;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const emails = await recipientService.getEmailsByRecipient(id, userId);
             res.status(200).json(emails);
         } catch (error) {
             console.error('Error fetching emails by recipient:', error);

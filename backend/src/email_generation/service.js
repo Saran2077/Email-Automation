@@ -90,21 +90,21 @@ class EmailGenerationService {
             const recipient = await RecipientRepository.getByEmail(toEmail); //
             if (template) {
                 contextData = {
-                    senderCompanyContext: template.senderCompanyContext,
-                    targetCompanyContext: template.targetCompanyContext,
-                    recipientContext: template.recipientContext,
-                    senderContext: template.senderContext
+                    senderCompanyContext: template?.senderCompanyContext || {},
+                    targetCompanyContext: template?.targetCompanyContext || {},
+                    recipientContext: template?.recipientContext || {},
+                    senderContext: template?.senderContext || {}
                 };
-                stage = recipient.stage;
+                stage = recipient?.stage || 'CONTACT';
             } else {
                 const recipient = await RecipientRepository.getByEmail(toEmail);
                 if (!recipient) throw new Error('Recipient not found');
                 const newTemplate = await this.createDefaultTemplate(recipient);
                 contextData = {
-                    senderCompanyContext: newTemplate.senderCompanyContext,
-                    targetCompanyContext: newTemplate.targetCompanyContext,
-                    recipientContext: newTemplate.recipientContext,
-                    senderContext: newTemplate.senderContext
+                    senderCompanyContext: newTemplate?.senderCompanyContext || {},
+                    targetCompanyContext: newTemplate?.targetCompanyContext || {},
+                    recipientContext: newTemplate?.recipientContext || {},
+                    senderContext: newTemplate?.senderContext || {}
                 };
             }
 
@@ -114,10 +114,10 @@ class EmailGenerationService {
                 contextData,
                 customPrompt,
                 customContext: customContext ? {
-                    senderCompanyContext: customContext.senderCompanyContext || {},
-                    targetCompanyContext: customContext.targetCompanyContext || {},
-                    recipientContext: customContext.recipientContext || {},
-                    senderContext: customContext.senderContext || {}
+                    senderCompanyContext: customContext?.senderCompanyContext || {},
+                    targetCompanyContext: customContext?.targetCompanyContext || {},
+                    recipientContext: customContext?.recipientContext || {},
+                    senderContext: customContext?.senderContext || {}
                 } : null,
                 customInstructions // Add custom instructions to payload
             };
@@ -156,8 +156,8 @@ class EmailGenerationService {
     // Helper method to create a default template
     async createDefaultTemplate(recipient) {
         const templateData = {
-            recipientEmail: recipient.email,
-            stage: recipient.stage || 'CONTACT',
+            recipientEmail: recipient?.email,
+            stage: recipient?.stage || 'CONTACT',
             senderCompanyContext: {
                 companyName: "Adya",
                 companyDescription: process.env.COMPANY_DESCRIPTION || "",
@@ -165,14 +165,14 @@ class EmailGenerationService {
                 productAndServices: process.env.PRODUCT_AND_SERVICES || ""
             },
             targetCompanyContext: {
-                companyName: recipient.company,
-                companyDescription: recipient.Description,
-                industry: recipient.industry
+                companyName: recipient?.company,
+                companyDescription: recipient?.Description,
+                industry: recipient?.industry
             },
             recipientContext: {
-                name: recipient.name,
-                designation: recipient.designation,
-                shortBio: recipient.shortBio
+                name: recipient?.name,
+                designation: recipient?.designation,
+                shortBio: recipient?.shortBio
             },
             senderContext: {
                 name: process.env.SENDER_NAME || "Saran M",
@@ -216,7 +216,8 @@ class EmailGenerationService {
                         shortBio: recipient?.shortBio
                     },
                     customPrompt: payload?.customPrompts || [],
-                    customInstructions: payload?.customInstructions || ""
+                    customInstructions: payload?.customInstructions || "",
+                    createdById: recipient?.createdById || ""
                 };
 
                 // Create template
