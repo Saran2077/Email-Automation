@@ -78,6 +78,105 @@ const CONTEXT_STRUCTURE = {
     SENDER: ['name', 'designation', 'companyName']
 };
 
+const AI_USE_CASES = {
+    "Retail (Seller-focused)": [
+        "Inventory Management",
+        "Agent Pricing Optimization",
+        "Agent Market Intelligence",
+        "Agent Supplier Relationship",
+        "Agent Product Listing Optimization",
+        "Agent Sales Forecasting",
+        "Agent Customer Feedback Analysis",
+        "Agent Competition Monitoring",
+        "Agent Visual Merchandising",
+        "Agent Returns/Refund Processing",
+    ],
+    "Retail (Buyer-focused)": [
+        "Personal Shopping Assistant",
+        "Product Discovery Agent",
+        "Size/Fit Recommendation Agent",
+        "Style Advisory Agent",
+        "Price Comparison Agent",
+        "Loyalty Program Assistant",
+        "Gift Recommendation Agent",
+        "Order Tracking Assistant",
+        "Product Review Analysis Agent",
+        "Shopping List Optimization Agent"
+    ],
+    "Fast Moving Consumer Goods (FMCG)": [
+        "Demand Forecasting Agent",
+        "Distribution Network Optimizer",
+        "Trade Promotion Agent",
+        "Market Share Analysis Agent",
+        "Consumer Behavior Analyst",
+        "Product Launch Assistant",
+        "Brand Monitoring Agent",
+        "Shelf Space Optimization Agent",
+        "Stock Replenishment Agent",
+        "Campaign Performance Analyzer",
+        "Documentation Generator",
+        "API Integration Assistant",
+        "Security Vulnerability Scanner",
+        "System Architecture Advisor",
+        "Performance Optimization Agent",
+        "Test Case Generator"
+    ],
+    "Finance": [
+        "Fraud Detection Agent",
+        "Credit Risk Assessment Agent",
+        "Trading Strategy Assistant",
+        "Portfolio Rebalancing Agent",
+        "Regulatory Compliance Monitor",
+        "Transaction Anomaly Detector",
+        "Financial Planning Assistant",
+        "Market Analysis Agent",
+        "Cash Flow Forecasting Agent",
+        "Debt Collection Assistant",
+        "Expense Classification Agent",
+        "Audit Assistant",
+        "Tax Compliance Monitor",
+        "Journal Entry Validator",
+        "Financial Statement Analyzer",
+        "Invoice Processing Agent",
+        "Reconciliation Assistant",
+        "Budget Planning Agent",
+        "Revenue Recognition Assistant",
+        "Fixed Asset Management Agent"
+    ],
+    "Insurance": [
+        "Claims Processing Agent",
+        "Risk Assessment Agent",
+        "Policy Recommendation Agent",
+        "Fraud Detection Assistant",
+        "Customer Service Agent",
+        "Premium Calculation Agent",
+        "Document Verification Agent",
+        "Underwriting Assistant",
+        "Policy Renewal Agent",
+        "Claims Investigation Agent"
+    ],
+    "Manufacturing": [
+        "Predictive Maintenance Agent",
+        "Quality Control Assistant",
+        "Production Scheduling Agent",
+        "Inventory Optimization Agent",
+        "Equipment Monitoring Agent",
+        "Supply Chain Assistant",
+        "Safety Compliance Monitor",
+        "Process Optimization Agent",
+        "Defect Detection Assistant",
+        "Energy Usage Optimizer"
+    ],
+    "HR": [
+        "AI Self-Assessment Agent",
+        "AI Profile Summarization Agent",
+        "AI Video Interview Agent",
+        "AI Search Optimization Agent",
+        "Conversational Interface Agent for Recruiters",
+        "AI Q & A Analysis Agent"
+    ]
+};
+
 const formatContextSection = (contextData, section) => {
     if (!contextData) return '';
     
@@ -175,7 +274,44 @@ export const getPromptForStage = ({ stage, contextData, customContext, customPro
         User's Prompt:
         ${defaultPrompt}
 
-        General Requirements:
+        ##AI Use Cases:
+         Identify the industry and nature of the business. Identify the likely use cases the company would have for an AI agent or copilot.
+         Include those company specific AI use cases also in the email body.
+         Below are some example usecases across different industries:
+         ${JSON.stringify(AI_USE_CASES)}
+         Do not limit the use cases to just the ones mentioned above, these are just thought starters.
+         Please provide a list of 5 to 6 likely AI Agent or Copilots for each line item. Make them unique and highly pertinent and relevant to this company and industry
+
+
+        ##AI Benefit Metrics:
+           Using the industry and nature of the business, identify the likely BENEFITS of using an AI agent or copilot in the identified AI Use Cases.
+           Include the benefits too in the email body.
+            Focus on these key benefit areas:
+            - Operational improvements (e.g., 24/7 automated service delivery)
+            - Business impact (e.g., higher customer satisfaction)
+            - Productivity gains (e.g., reduced manual processing time)
+            (Do not limit the benefits to just the ones mentioned above, these are just thought starters.)
+
+            Examples of typical benefits:
+            - Operational: 24/7 automated service delivery, faster response times
+            - Business: Higher customer satisfaction, increased retention rates
+            - Productivity: Reduced processing time for routine tasks, lower error rates
+
+            Important:
+            - Focus on describing qualitative benefits
+            - Use general improvement terms (significant, substantial, noticeable)
+            - Do not quote specific research studies or percentage improvements
+            - Do not fabricate or specify exact metrics
+        
+        ##Technology Challenges:
+           Identify the likely Technology Challenges that the company may face using the company's nature and industry.
+           Identify how that can be overcome using the AI agent or copilot.
+           Include the challenges and how they can be overcome in the email body.
+
+        ##NOTE:
+           Include all the above sections into the email body seamlessly and naturally, while keeping the email short, concise, and impactful.
+
+        ##General Requirements:
         1. The email should be natural, professional, and engaging, with no placeholders or templated words like [signature] or [name]. Format the email body in valid HTML.
         2. Return only a valid JSON string with this structure:
         {
