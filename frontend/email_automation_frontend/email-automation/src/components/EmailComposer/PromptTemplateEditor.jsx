@@ -550,13 +550,15 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
                                         <p className="text-gray-600 mt-1 text-sm">{prompt.content}</p>
                                     </div>
                                     <div className="flex gap-2">
-                                        <IconButton
-                                            onClick={() => handleApplyPrompt(index)}
-                                            size="small"
-                                            className="text-gray-500 hover:text-green-600"
-                                        >
+                                        {!isBulkCampaign && (
+                                            <IconButton
+                                                onClick={() => handleApplyPrompt(index)}
+                                                size="small"
+                                                className="text-gray-500 hover:text-green-600"
+                                            >
                                             <PlayIcon className="h-4 w-4" />
-                                        </IconButton>
+                                            </IconButton>
+                                        )}
                                         <IconButton
                                             onClick={() => handleEditPrompt(index)}
                                             size="small"
