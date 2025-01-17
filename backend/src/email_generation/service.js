@@ -194,7 +194,17 @@ class EmailGenerationService {
                 const templateData = {
                     recipientEmail: recipient?.email,
                     stage: recipient?.stage,
-                    senderCompanyContext: payload?.senderCompanyContext,
+                    senderCompanyContext: payload?.senderCompanyContext || {
+                        companyName: process.env.COMPANY_NAME || "Adya",
+                        companyDescription: process.env.COMPANY_DESCRIPTION || "",
+                        companyWebsite: process.env.COMPANY_WEBSITE || "",
+                        productAndServices: process.env.PRODUCT_AND_SERVICES || ""
+                    },
+                    senderContext: payload?.senderContext || {
+                        name: process.env.SENDER_NAME || "Saran M",
+                        designation: process.env.SENDER_DESIGNATION || "Chief of Communications",
+                        companyName: process.env.COMPANY_NAME || "Adya"
+                    },
                     targetCompanyContext: {
                         companyName: recipient?.company,
                         companyDescription: recipient?.Description,
@@ -205,7 +215,6 @@ class EmailGenerationService {
                         designation: recipient?.designation,
                         shortBio: recipient?.shortBio
                     },
-                    senderContext: payload?.senderContext,
                     customPrompt: payload?.customPrompts || [],
                     customInstructions: payload?.customInstructions || ""
                 };
