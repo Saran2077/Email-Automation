@@ -391,7 +391,7 @@ const PromptTemplateEditor = ({ recipientEmail, onUpdateBody, onUpdateSubject, o
                                                     {editMode[`${sectionName}-${key}`] ? (
                                                         <TextField
                                                             fullWidth
-                                                            defaultValue={value}
+                                                            value={value}
                                                             onBlur={(e) => handleSave(sectionName, key, e.target.value)}
                                                             variant="outlined"
                                                             size="small"

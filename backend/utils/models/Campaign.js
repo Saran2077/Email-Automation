@@ -16,7 +16,58 @@ const campaignSchema = new mongoose.Schema({
   recipientsList: {
     type: [mongoose.Schema.Types.ObjectId], 
     ref: 'Recipient', 
-    required: true,
+  },
+  promptTemplate: {
+    type: {
+      senderCompanyContext: new mongoose.Schema(
+        {
+          companyName: { type: String, required: false },
+          companyDescription: { type: String, required: false },
+          companyWebsite: { type: String, required: false },
+          productAndServices: { type: String, required: false },
+        },
+        { strict: false, _id: false }
+      ),
+  
+      targetCompanyContext: new mongoose.Schema(
+        {
+          companyName: { type: String, required: false },
+          companyDescription: { type: String, required: false },
+          industry: { type: String, required: false },
+        },
+        { strict: false, _id: false }
+      ),
+  
+      recipientContext: new mongoose.Schema(
+        {
+          name: { type: String, required: false },
+          designation: { type: String, required: false },
+          shortBio: { type: String, required: false },
+        },
+        { strict: false, _id: false }
+      ),
+  
+      senderContext: new mongoose.Schema(
+        {
+          name: { type: String, required: false },
+          designation: { type: String, required: false },
+          companyName: { type: String, required: false },
+        },
+        { strict: false, _id: false }
+      ),
+  
+      customPrompt: [
+        new mongoose.Schema(
+          {
+            name: { type: String, required: true },
+            content: { type: String, required: true },
+          },
+          { strict: true, _id: false }
+        ),
+      ],
+  
+      customInstructions: { type: String, required: false },
+    }
   },
   active: {
     type: Boolean,
@@ -27,7 +78,7 @@ const campaignSchema = new mongoose.Schema({
 });
 
 // Pre-save middleware to auto-increment campaignId
-userSchema.pre('save', async function(next) {
+campaignSchema.pre('save', async function(next) {
   try {
     if (this.isNew) {
       const counter = await Counter.findByIdAndUpdate(

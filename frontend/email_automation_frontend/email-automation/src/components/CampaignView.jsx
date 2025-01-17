@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Modal, Table, Form, Input, Select, Space, Popconfirm } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
+import { campaignAPI } from '../utils/apiLayer';
+import { ArrowPathRoundedSquareIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import PromptTemplateEditor from './EmailComposer/PromptTemplateEditor';
 
 // Sample campaign data
 const initialCampaigns = [
@@ -42,12 +45,40 @@ const CampaignManagement = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalType, setModalType] = useState('create');
   const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [showPromptTemplate, setShowPromptTemplate] = useState(false)
+  const [templatePayload, setTemplatePayload] = useState(null)
   const [form] = Form.useForm();
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 5,
     total: initialCampaigns.length,
   });
+
+  useEffect(() => {
+    fetchCampaign();
+  }, [])
+
+  const fetchCampaign = async () => {
+    try {
+      const response = await campaignAPI.list();
+      console.log("fetchCampaign", response?.data?.campaigns);
+      setCampaigns(response?.data?.campaigns);
+    } catch (error) {
+      console.error("FetchCampaign", error);
+    }
+  }
+
+  const handleGenerate = (campaign) => {
+    setShowPromptTemplate(true);
+    setTemplatePayload(campaign?.promptTemplate)
+  }
+
+  const handleTemplateUpdate = (templateData) => {
+    const parsedTemplate = JSON.parse(templateData);
+    console.log('template update', templateData)
+    setTemplatePayload(parsedTemplate);
+    setShowPromptTemplate(false);
+  }
 
   // Table columns configuration
   const columns = [
@@ -57,16 +88,21 @@ const CampaignManagement = () => {
       key: 'name',
     },
     {
+      title: 'Campaign Description',
+      dataIndex: 'description',
+      key: 'description',
+    },
+    {
       title: 'Created Date',
-      dataIndex: 'createdDate',
-      key: 'createdDate',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
     },
     {
       title: 'Recipients',
       key: 'recipients',
       render: (_, record) => (
         <span>
-          {record.recipients?.length} group(s) selected
+          {record.recipientsList?.length} 
         </span>
       ),
     },
@@ -89,6 +125,11 @@ const CampaignManagement = () => {
           >
             <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
+          <Button
+            type="text"
+            icon={<ArrowPathRoundedSquareIcon className='h-4 w-4' />}
+            onClick={() => handleGenerate(record)}
+          />
         </Space>
       ),
     },
@@ -98,6 +139,7 @@ const CampaignManagement = () => {
     setModalType('edit');
     setSelectedCampaign(campaign);
     form.setFieldsValue(campaign);
+    setTemplatePayload(campaign?.promptTemplate)
     setIsModalVisible(true);
   };
 
@@ -112,25 +154,47 @@ const CampaignManagement = () => {
     setIsModalVisible(true);
   };
 
-  const handleModalOk = () => {
-    form.validateFields().then((values) => {
+  const handleModalOk = async () => {
+    try {
+      const values = await form.validateFields(); // Ensure validation is awaited
+  
       if (modalType === 'create') {
         const newCampaign = {
           ...values,
-          id: campaigns.length + 1,
-          createdDate: new Date().toISOString().split('T')[0],
+          promptTemplate: templatePayload,
         };
-        setCampaigns([...campaigns, newCampaign]);
-      } else {
-        setCampaigns(campaigns.map(campaign =>
-          campaign.id === selectedCampaign.id
-            ? { ...campaign, ...values }
-            : campaign
-        ));
+  
+        // Await API call for consistency
+        const createdCampaign = await campaignAPI.create({ data: newCampaign});
+  
+        // Use the response from the API if applicable
+        setCampaigns([...campaigns, createdCampaign]);
+      } else if (modalType === 'edit' && selectedCampaign) {
+        console.log('selectedCampaign', selectedCampaign, values)
+        const updatedCampaign = {
+          ...selectedCampaign,
+          ...values,
+        };
+  
+        // Optional: call an update API here if needed
+        await campaignAPI.update(selectedCampaign?.campaignId, { data: updatedCampaign });
+  
+        setCampaigns(
+          campaigns.map((campaign) =>
+            campaign.id === selectedCampaign.id
+              ? updatedCampaign
+              : campaign
+          )
+        );
       }
+  
+      // Close modal
       setIsModalVisible(false);
-    });
+    } catch (error) {
+      console.error("Error handling modal submission:", error);
+    }
   };
+  
 
   const handleTableChange = (pagination) => {
     setPagination(pagination);
@@ -158,6 +222,19 @@ const CampaignManagement = () => {
         pagination={pagination}
         onChange={handleTableChange}
       />
+
+        {showPromptTemplate && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+            <div className="max-h-[90vh] w-[800px] overflow-y-auto bg-white rounded-lg shadow-xl">
+              <PromptTemplateEditor
+                onClose={() => setShowPromptTemplate(false)}
+                onUpdateBody={handleTemplateUpdate}
+                isBulkCampaign={true}
+                initialTemplateData={templatePayload}
+              />
+            </div>
+          </div>
+        )}
 
       {/* Create/Edit Modal */}
       <Modal
@@ -195,28 +272,7 @@ const CampaignManagement = () => {
           </Form.Item>
 
           <div className="bg-gray-50 p-4 rounded-lg mb-4">
-            <h3 className="text-lg font-medium mb-4">Recipients</h3>
-            
-            {/* <Form.Item
-              name="recipients"
-              label="Recipient Groups"
-              extra="Select one or more recipient groups"
-            >
-              <Select
-                mode="multiple"
-                placeholder="Select recipient groups"
-                style={{ width: '100%' }}
-                options={recipientGroups.map(group => ({
-                  value: group.value,
-                  label: (
-                    <div className="flex justify-between">
-                      <span>{group.label}</span>
-                      <span className="text-gray-500">({group.count} recipients)</span>
-                    </div>
-                  )
-                }))}
-              />
-            </Form.Item> */}
+            {/* <h3 className="text-lg font-medium mb-4">Recipients</h3>
 
             <Form.Item
               name="individualRecipients"
@@ -233,7 +289,18 @@ const CampaignManagement = () => {
                   option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }
               />
-            </Form.Item>
+            </Form.Item> */}
+
+            <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => setShowPromptTemplate(true)}
+              className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+            >
+                <SparklesIcon className="h-4 w-4" />
+              <span>Generate Campaign Template with AI</span>
+            </button>
+          </div>
 
             <div className="bg-blue-50 p-3 rounded-lg mt-4">
               <Form.Item noStyle shouldUpdate>

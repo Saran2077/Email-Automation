@@ -3,6 +3,23 @@ import { XMarkIcon } from '@heroicons/react/24/outline'
 
 function AddToRecipientsModal({ onClose, selectedCustomersCount }) {
   const [initialStage, setInitialStage] = useState('contact')
+  const [campaigns, setCampaigns] = useState([])
+  const [selectedCampaign, setSelectedCampaign] = useState('')
+
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        const response = await campaignAPI.list()
+        setCampaigns(response)
+      } catch (error) {
+        console.error('Error fetching campaigns:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCampaigns()
+  }, [])
 
   const handleSubmit = (e) => {
     e.preventDefault()

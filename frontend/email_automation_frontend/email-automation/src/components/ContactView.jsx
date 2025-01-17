@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Mail, Linkedin, Building2, User, Briefcase, Calendar, MessageSquare, Trophy, TrendingUp, Inbox, Send, Edit, SaveIcon } from 'lucide-react';
 import TextArea from 'antd/es/input/TextArea';
-import { recipientAPI } from '../utils/apiLayer';
+import { campaignAPI, recipientAPI } from '../utils/apiLayer';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PencilIcon, TrashIcon, ChevronDownIcon, ChevronUpIcon  } from '@heroicons/react/24/outline';
+import { Button, Modal, Select } from 'antd';
+import { UsergroupAddOutlined } from '@ant-design/icons';
 
 export default function ContactView() {
   const [stage, setStage] = useState(null);
@@ -17,6 +19,37 @@ export default function ContactView() {
   const [emailHistory, setEmailHistory] = useState({ recipient: {}, emails: [] });
   const { id } = useParams();
   const [expandedEmails, setExpandedEmails] = useState(new Set());
+  const [campaigns, setCampaigns] = useState([]);
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
+  
+  const fetchCampaigns = async () => {
+    try {
+      const response = await campaignAPI.list();
+      setCampaigns(response?.data?.campaigns);
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      message.error('Failed to fetch campaigns');
+    }
+  };
+
+  const handleAddToCampaign = async () => {
+    if (!selectedCampaign) return;
+    
+    try {
+      await campaignAPI.add(selectedCampaign, { recipientIds: [contact._id] });
+      setIsModalOpen(false);
+      setSelectedCampaign(null);
+      message.success('Successfully added to campaign');
+    } catch (error) {
+      console.error('Error adding to campaign:', error);
+      message.error('Failed to add to campaign');
+    }
+  };
 
   useEffect(() => {
     fetchContact();
@@ -160,6 +193,13 @@ export default function ContactView() {
               </p>
             </div>
             <div className="flex gap-3">
+            <Button
+              icon={<UsergroupAddOutlined />}
+              onClick={() => setIsModalOpen(true)}
+              className="px-4 py-2 h-full bg-white/10 text-white rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors backdrop-blur-sm"
+            >
+              Add to Campaign
+            </Button>
               <button className="px-4 py-2 bg-white/10 rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors backdrop-blur-sm" onClick={() => navigate('/mailbox', {state: {
                 to: contact?.email,
                 subject: '',
@@ -294,6 +334,46 @@ export default function ContactView() {
                   <p className="text-gray-600 leading-relaxed">{contact.shortBio}</p>
                 </div>
               </div>
+
+              <Modal
+                title="Add to Campaign"
+                open={isModalOpen}
+                centered
+                onCancel={() => {
+                  setIsModalOpen(false);
+                  setSelectedCampaign(null);
+                }}
+                footer={[
+                  <Button 
+                    key="cancel" 
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setSelectedCampaign(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>,
+                  <Button
+                    key="submit"
+                    type="primary"
+                    disabled={!selectedCampaign}
+                    onClick={handleAddToCampaign}
+                  >
+                    Add to Campaign
+                  </Button>
+                ]}
+              >
+                <Select
+                  placeholder="Select a campaign"
+                  style={{ width: '100%' }}
+                  value={selectedCampaign}
+                  onChange={(value) => setSelectedCampaign(value)}
+                  options={campaigns.map(campaign => ({
+                    value: campaign.campaignId,
+                    label: campaign.name
+                  }))}
+                />
+              </Modal>
             </div>
           )}
 

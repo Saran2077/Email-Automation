@@ -3,6 +3,7 @@ import { XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import PromptTemplateEditor from './EmailComposer/PromptTemplateEditor'
+import { campaignAPI } from '../utils/apiLayer'
 
 function CreateCampaignModal({ onClose, onSubmit, selectedCustomers, onTemplateUpdate }) {
   const navigate = useNavigate()
@@ -16,6 +17,23 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers, onTemplateU
   const [showPromptTemplate, setShowPromptTemplate] = useState(false)
   const [campaignTemplate, setCampaignTemplate] = useState({ subject: '', body: '' })
   const [templatePayload, setTemplatePayload] = useState(null)
+  const [campaigns, setCampaigns] = useState([])
+  const [selectedCampaign, setSelectedCampaign] = useState('')
+
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        const response = await campaignAPI.list();
+        setCampaigns(response?.data?.campaigns || [])
+      } catch (error) {
+        console.error('Error fetching campaigns:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCampaigns()
+  }, [])
 
   useEffect(() => {
     // Fetch recipients from API
@@ -32,7 +50,6 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers, onTemplateU
     setIsLoading(true)
 
     try {
-      console.log(selectedCustomers)
       // First create recipients with template
       // const recipientsResponse = await fetch('http://localhost:3000/api/v1/recipients/bulk-create', {
       //   method: 'POST',
@@ -87,7 +104,7 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers, onTemplateU
         },
         body: JSON.stringify({
           list_id: selectedList,
-          data: selectedCustomers
+          data: newCampaignId
         }),
       })
 
@@ -96,7 +113,7 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers, onTemplateU
       }
 
       // Call parent's onSubmit with selected stage
-      await onSubmit()
+      await onSubmit(selectedCampaign)
       
       const responseData = await response.json()
       if (responseData.meta.status) {
@@ -157,6 +174,28 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers, onTemplateU
               </p>
             </div>
           </div>
+
+          <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Campaign (Optional)
+              </label>
+              <select
+                value={selectedCampaign}
+                onChange={(e) => setSelectedCampaign(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isLoading}
+              >
+                <option value="">Select a campaign</option>
+                {campaigns.map((campaign) => (
+                  <option key={campaign.campaignId} value={campaign.campaignId}>
+                    {campaign.name}
+                  </option>
+                ))}
+              </select>
+              {isLoading && (
+                <p className="mt-1 text-sm text-gray-500">Loading campaigns...</p>
+              )}
+            </div>
 
           <div className="mt-4">
             <button
