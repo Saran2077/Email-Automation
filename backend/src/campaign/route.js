@@ -1,5 +1,6 @@
 import express from "express";
 import CampaignHandler from "./handler.js";
+import { authenticate } from "../../middleware/auth.js";        
 
 const router = express.Router();
 const campaignHandler = new CampaignHandler();

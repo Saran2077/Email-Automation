@@ -5,13 +5,14 @@ import { addContactTags, getContactsData, updateContact } from "../services/acti
 const emailRepository = new EmailRepository()
 class MailboxService {
 
-    async draftEmail(subject, body, to, from){
+    async draftEmail(subject, body, to, from, userId){
         try{
             let toRecipient = await Recipient.findOne({ email: to });
             if (!toRecipient) {
                 toRecipient = await Recipient.create({ 
                     email: to,
-                    name: to.split('@')[0]
+                    name: to.split('@')[0],
+                    createdById: userId
                 });
             }
 
@@ -25,7 +26,8 @@ class MailboxService {
                 to: toRecipient._id,
                 messageId: draftMessageId,
                 isDraft: true,
-                isSent: false
+                isSent: false,
+                createdById: userId
             }
 
             console.log('Creating email with payload:', payload);
@@ -38,11 +40,11 @@ class MailboxService {
         }
     }
 
-    async listDraftEmail(){
+    async listDraftEmail(userId){
         try {
             // Use the repository's getRecipientEmails method with 'drafts' type
             const draftEmails = await emailRepository.list(
-                { isDraft: true }
+                { isDraft: true, createdById: userId }
             );
 
             return {
@@ -57,11 +59,11 @@ class MailboxService {
         }
     }
 
-    async listStarEmail(){
+    async listStarEmail(userId){
         try {
             // Use the repository's getRecipientEmails method with 'drafts' type
             const starEmails = await emailRepository.list(
-                { isStarred: true }
+                { isStarred: true, createdById: userId }
             );
 
             return {
@@ -76,11 +78,11 @@ class MailboxService {
         }
     }
 
-    async starEmail(id){
+    async starEmail(id, userId){
         try {
             // Use the repository's getRecipientEmails method with 'drafts' type
             console.log(1)
-            const starEmails = await emailRepository.toggleStarred(id);
+            const starEmails = await emailRepository.toggleStarred(id, userId);
 
             return {
                 success: true,
@@ -93,11 +95,11 @@ class MailboxService {
         }
     }
 
-    async inboxEmail(){
+    async inboxEmail(userId){
         try {
             // Use the repository's getRecipientEmails method with 'drafts' type
             const inboxEmails = await emailRepository.list(
-                { isReceived: true }
+                { isReceived: true, createdById: userId }
             );
 
             return {
@@ -112,7 +114,7 @@ class MailboxService {
         }
     }
 
-    async updateDraftEmail(emailId, subject, body, to, from){
+    async updateDraftEmail(emailId, subject, body, to, from, userId){
         try {
             let emailToSend;
 
@@ -120,7 +122,8 @@ class MailboxService {
             if (!toRecipient) {
                 toRecipient = await Recipient.create({ 
                     email: to,
-                    name: to.split('@')[0] // Basic name from email
+                    name: to.split('@')[0], // Basic name from email
+                    createdById: userId
                 });
             }
 
@@ -135,6 +138,7 @@ class MailboxService {
                         from,
                         isDraft: true,
                         isSent: false,
+                        createdById: userId,
                         status: 'draft'
                     }
                 );
@@ -152,7 +156,7 @@ class MailboxService {
         }
     }
 
-    async sendEmail(emailId, subject, body, to, from, message_id) {
+    async sendEmail(emailId, subject, body, to, from, message_id, userId) {
         try {
             let emailToSend;
 
@@ -160,7 +164,8 @@ class MailboxService {
             if (!toRecipient) {
                 toRecipient = await Recipient.create({ 
                     email: to,
-                    name: to.split('@')[0] // Basic name from email
+                    name: to.split('@')[0], // Basic name from email
+                    createdById: userId
                 });
             }
 
@@ -175,7 +180,8 @@ class MailboxService {
                         from,
                         isDraft: false,
                         isSent: true,
-                        messageId: message_id
+                        messageId: message_id,
+                        createdById: userId
                     }
                 );
             } else {
@@ -187,7 +193,8 @@ class MailboxService {
                     from,
                     isDraft: false,
                     isSent: true,
-                    messageId: message_id
+                    messageId: message_id,
+                    createdById: userId
                 });
             }
 
@@ -208,11 +215,11 @@ class MailboxService {
         }
     }
 
-    async listSentEmail(){
+    async listSentEmail(userId){
         try {
             // Use the repository's getRecipientEmails method with 'sent' type
             const sentEmails = await emailRepository.list(
-                { isSent: true }
+                { isSent: true, createdById: userId }
             );
             return {
                 success: true,
@@ -226,10 +233,10 @@ class MailboxService {
         }
     }
 
-    async getEmailById(emailId){
+    async getEmailById(emailId, userId){
         try {
             // Use the repository's getRecipientEmails method with 'sent' type
-            const email = await emailRepository.getById(emailId);
+            const email = await emailRepository.getById(emailId, userId);
             return email;
         } catch(error) {
             throw error;

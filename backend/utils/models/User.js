@@ -5,7 +5,9 @@ import { Counter } from './Counter.js';
 const userSchema = new mongoose.Schema({
   userId: {
     type: Number,
-    unique: true
+    unique: true,
+    required: true,
+    ref: 'userId'
   },
   email: {
     type: String,
@@ -48,6 +50,10 @@ const userSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Add this to tell Mongoose to use userId for population
+userSchema.set('toObject', { getters: true });
+userSchema.set('toJSON', { getters: true });
 
 // Pre-save middleware to auto-increment userId
 userSchema.pre('save', async function(next) {

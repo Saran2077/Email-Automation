@@ -1,5 +1,7 @@
 import AuthRepository from '../../utils/repository/Auth.js';
-import jwt from '../../middleware/jwt.js';
+import JsonWebToken from '../../middleware/jwt.js';
+
+const jwt = new JsonWebToken();
 
 class AuthService {
   async register(userData) {
@@ -14,7 +16,10 @@ class AuthService {
       const user = await AuthRepository.createUser(userData);
       
       // Generate token
-      const token = jwt.sign({ userId: user._id, email: user.email });
+      const token = jwt.sign({ 
+        userId: user.userId,  // Using userId instead of _id
+        email: user.email 
+      });
       
       return { user, token };
     } catch (error) {
@@ -34,13 +39,70 @@ class AuthService {
         throw new Error('Invalid password');
       }
 
-      // Update last login
-      await AuthRepository.updateUser(user._id, { lastLogin: new Date() });
+      // Update last login using userId
+      await AuthRepository.updateUser({ userId: user.userId }, { lastLogin: new Date() });
 
       // Generate token
-      const token = jwt.sign({ userId: user._id, email: user.email });
+      const token = jwt.sign({ 
+        userId: user.userId,  // Using userId instead of _id
+        email: user.email 
+      });
 
       return { user, token };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async update(query, userData) {
+    try {
+      const user = await AuthRepository.updateUser(query, userData);
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updatePassword(query, userData) {
+    try {
+      const user = await AuthRepository.updateUser(query, userData);
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getProfileInfo(query) {
+    try {
+      const selectFields = {
+        userId: 1,
+        email: 1,
+        username: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        __v: 1
+      };
+      const user = await AuthRepository.findUserById(query, selectFields);
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getSettingsInfo(query) {
+    try {
+      const selectFields = {
+        userId: 1,
+        email: 1,
+        apiKeys: 1,
+        apiUrls: 1,
+        organization: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        __v: 1
+      };
+      const user = await AuthRepository.findUserById(query, selectFields);
+      return user;
     } catch (error) {
       throw error;
     }
@@ -48,4 +110,7 @@ class AuthService {
 }
 
 export default AuthService;
+
+
+
 

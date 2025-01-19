@@ -51,6 +51,11 @@ const promptTemplateSchema = new mongoose.Schema({
   }],
   customInstructions: {
     type: String
+  },
+ createdById: {
+    type: Number,
+    ref: 'User',
+    required: true
   }
 }, {
   timestamps: true

@@ -13,9 +13,9 @@ class RecipientRepository {
 
   
   // Get a recipient by ID
-  async getById(recipientId) {
+  async getById(recipientId, userId) {
     try {
-      return await Recipient.findOne({ recipientId })
+      return await Recipient.findOne({ recipientId, createdById: userId })
         .populate('emails.sent')
         .populate('emails.received')
         .populate('emails.starred')
@@ -25,9 +25,9 @@ class RecipientRepository {
     }
   }
 
-  async getByEmail(email) {
+  async getByEmail(email, userId) {
     try {
-      return await Recipient.findOne({ email });
+      return await Recipient.findOne({ email, createdById: userId });
     } catch (error) {
       throw new Error(`Error fetching recipient: ${error.message}`);
     }

@@ -17,11 +17,23 @@ class AuthRepository {
     }
   }
 
-  async updateUser(userId, updateData) {
+  async updateUser(query, updateData) {
     try {
-      return await User.findByIdAndUpdate(userId, updateData, { new: true });
+      return await User.findOneAndUpdate(
+        query,
+        updateData,
+        { new: true }
+      );
     } catch (error) {
       throw new Error(`Error updating user: ${error.message}`);
+    }
+  }
+
+  async findUserById(query, selectFields) {
+    try {
+      return await User.findOne(query, selectFields);
+    } catch (error) {
+      throw new Error(`Error finding user: ${error.message}`);
     }
   }
 }

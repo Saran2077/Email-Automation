@@ -53,6 +53,11 @@ const emailSchema = new mongoose.Schema({
   isDraft: {
     type: Boolean,
     default: true
+  },
+  createdById: {
+    type: Number,
+    ref: 'User',
+    required: true
   }
 }, {
   timestamps: true

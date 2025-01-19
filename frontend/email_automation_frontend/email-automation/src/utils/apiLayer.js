@@ -2,12 +2,66 @@ import axios from 'axios';
 
 const BASE_URL = 'http://localhost:3000/api';
 
+// Create axios instance with default config
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
 });
+
+// Add request interceptor to add token to all requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Make sure to add the 'Bearer ' prefix
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+
+// API services
+export const authAPI = {
+  getProfileInfo: async () => {
+    try {
+      const response = await api.get('/v1/auth/get-profile-info');
+      return response.data;
+    } catch (error) {
+      console.error('API Error:', error.response?.data || error.message);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  getSettingsInfo: async () => {
+    try {
+      const response = await api.get('/v1/auth/get-settings-info');
+      return response.data;
+    } catch (error) {
+      console.error('API Error:', error.response?.data || error.message);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Helper method to check if token is valid
+  validateToken: () => {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    
+    try {
+      // Basic JWT expiry check
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp > Date.now() / 1000;
+    } catch (error) {
+      return false;
+    }
+  }
+};
 
 export const recipientAPI = {
   create: async (data) => {
@@ -162,120 +216,62 @@ export const mailboxAPI = {
 
     createDraft: async (draftData) => {
         try {
-            const response = await fetch('http://localhost:3000/api/v1/mailbox/create_draft_email', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(draftData)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to create draft');
-            }
-
-            return await response.json();
+            const response = await api.post('/v1/mailbox/create_draft_email', draftData);
+            return response.data;
         } catch (error) {
-            console.error('Error creating draft:', error);
-            throw error;
+            throw error.response?.data || error.message;
         }
     },
-  
+
     listDrafts: async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/v1/mailbox/list_draft_email', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch draft emails');
-            }
-            
-            return await response.json();
+            const response = await api.get('/v1/mailbox/list_draft_email');
+            return response.data;
         } catch (error) {
-            console.error('Error fetching draft emails:', error);
-            throw error;
+            throw error.response?.data || error.message;
         }
     },
 
     listSentEmails: async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/v1/mailbox/list_sent_email');
-            if (!response.ok) {
-                throw new Error('Failed to fetch sent emails');
-            }
-            return await response.json();
+            const response = await api.get('/v1/mailbox/list_sent_email');
+            return response.data;
         } catch (error) {
-            console.error('Error fetching sent emails:', error);
-            throw error;
+            throw error.response?.data || error.message;
         }
     },
 
     inboxEmails: async () => {
       try {
-          const response = await fetch('http://localhost:3000/api/v1/mailbox/list_inbox_email');
-          if (!response.ok) {
-              throw new Error('Failed to fetch sent emails');
-          }
-          return await response.json();
+          const response = await api.get('/v1/mailbox/list_inbox_email');
+          return response.data;
       } catch (error) {
-          console.error('Error fetching sent emails:', error);
-          throw error;
+          throw error.response?.data || error.message;
       }
   },
 
     updateDraft: async (draftData) => {
         try {
-            const response = await fetch('http://localhost:3000/api/v1/mailbox/update_draft_email', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(draftData)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to update draft');
-            }
-
-            return await response.json();
+            const response = await api.post('/v1/mailbox/update_draft_email', draftData);
+            return response.data;
         } catch (error) {
-            console.error('Error updating draft:', error);
-            throw error;
+            throw error.response?.data || error.message;
         }
     },
 
     sendEmail: async (emailData) => {
         try {
-            const response = await fetch('http://localhost:3000/api/v1/mailbox/send_email', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(emailData)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to send email');
-            }
-
-            return await response.json();
+            const response = await api.post('/v1/mailbox/send_email', emailData);
+            return response.data;
         } catch (error) {
-            console.error('Error sending email:', error);
-            throw error;
+            throw error.response?.data || error.message;
         }
     },
 
     listStarredEmails: async() => {
       try {
-          const response = await fetch('http://localhost:3000/api/v1/mailbox/list_starred_email');
-          if (!response.ok) {
-              throw new Error('Failed to fetch starred emails');
-          }
-          return await response.json();
+          const response = await api.get('/v1/mailbox/list_starred_email');
+          return response.data;
       } catch (error) {
           console.error('Error fetching starred emails:', error);
           throw error;
@@ -284,22 +280,13 @@ export const mailboxAPI = {
 
     updateStarEmails: async(emailId) => {
       try {
-          const response = await fetch(`http://localhost:3000/api/v1/mailbox/star_email/${emailId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-          });
-          if (!response.ok) {
-              throw new Error('Failed to update starred emails');
-          }
-          return await response.json();
+          const response = await api.post(`/v1/mailbox/star_email/${emailId}`);
+          return response.data;
       } catch (error) {
-          console.error('Error update star emails:', error);
-          throw error;
+          throw error.response?.data || error.message;
       }
-    },
-
+    },  
+    
     generateEmailWithAI: async (payload) => {
         try {
             const response = await api.post('/v1/email_generation/generate_email_with_ai', payload);
