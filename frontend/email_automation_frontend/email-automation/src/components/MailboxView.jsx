@@ -3,14 +3,15 @@ import Draggable from 'react-draggable'
 import { 
   InboxIcon, 
   PaperAirplaneIcon, 
-  TrashIcon, 
   StarIcon as StarIconOutline,
   XMarkIcon,
   DocumentTextIcon,
   ArrowPathIcon,
   MinusIcon,
   ArrowsPointingOutIcon,
-  SparklesIcon
+  SparklesIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { mailboxAPI } from '../utils/apiLayer'
@@ -28,8 +29,7 @@ function MailboxView() {
     inbox: [],
     starred: [],
     drafts: [],
-    sent: [],
-    trash: []
+    sent: []
   })
   const [loading, setLoading] = useState(false)
   const location = useLocation();
@@ -51,6 +51,7 @@ function MailboxView() {
   const [showEmail, setShowEmail] = useState(false);
   const [showAIPrompt, setShowAIPrompt] = useState(false);
   const [aiPrompt, setAIPrompt] = useState('');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Fetch all emails on initial load
   useEffect(() => {
@@ -266,7 +267,6 @@ function MailboxView() {
     { name: 'Starred', icon: StarIconSolid, id: 'starred', count: emails.starred.length },
     { name: 'Drafts', icon: DocumentTextIcon, id: 'drafts', count: emails.drafts.length },
     { name: 'Sent', icon: PaperAirplaneIcon, id: 'sent', count: emails.sent.length },
-    { name: 'Trash', icon: TrashIcon, id: 'trash', count: emails.trash.length },
   ]
 
   const toggleStar = async (email) => {
@@ -671,33 +671,51 @@ function MailboxView() {
   return (
     <div className="flex h-full bg-gray-50">
       {/* Left Sidebar */}
-      <div className="w-72 bg-white shadow-lg">
-        <div className="p-6">
+      <div className={`${isSidebarCollapsed ? 'w-16' : 'w-72'} bg-white shadow-lg transition-all duration-300 relative`}>
+        {/* Collapse Toggle Button */}
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="absolute -right-3 top-20 bg-white rounded-full p-1 shadow-md hover:bg-gray-50 z-10"
+        >
+          {isSidebarCollapsed ? (
+            <ChevronRightIcon className="h-4 w-4 text-gray-600" />
+          ) : (
+            <ChevronLeftIcon className="h-4 w-4 text-gray-600" />
+          )}
+        </button>
+
+        <div className={`p-6 ${isSidebarCollapsed ? 'px-2' : ''}`}>
           <button 
             onClick={() => setShowComposeModal(true)}
-            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg px-6 py-3 hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            className={`w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg px-6 py-3 hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${
+              isSidebarCollapsed ? 'px-2' : ''
+            }`}
           >
-            Compose
+            {isSidebarCollapsed ? '+' : 'Compose'}
           </button>
         </div>
-        <nav className="mt-4 px-3">
+
+        <nav className={`mt-4 ${isSidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {folders.map((folder) => (
             <button
               key={folder.id}
               onClick={() => setActiveFolder(folder.id)}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg mb-1 transition-all duration-200 ${
+              className={`w-full flex items-center justify-between ${
+                isSidebarCollapsed ? 'px-2' : 'px-4'
+              } py-3 rounded-lg mb-1 transition-all duration-200 ${
                 activeFolder === folder.id
                   ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 font-medium shadow-sm'
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
+              title={isSidebarCollapsed ? folder.name : ''}
             >
               <div className="flex items-center">
-                <folder.icon className={`h-5 w-5 mr-3 ${
+                <folder.icon className={`h-5 w-5 ${!isSidebarCollapsed && 'mr-3'} ${
                   activeFolder === folder.id ? 'text-indigo-600' : 'text-gray-400'
                 }`} />
-                <span className="text-sm">{folder.name}</span>
+                {!isSidebarCollapsed && <span className="text-sm">{folder.name}</span>}
               </div>
-              {folder.count > 0 && (
+              {!isSidebarCollapsed && folder.count > 0 && (
                 <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                   activeFolder === folder.id 
                     ? 'bg-indigo-100 text-indigo-600' 
@@ -917,11 +935,7 @@ function MailboxView() {
                 >
                   <SparklesIcon className="h-4 w-4" />
                 </button>
-                <button className="p-2 hover:bg-gray-100 rounded" title="Formatting options">
-                  <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
+               
                 <button className="p-2 hover:bg-gray-100 rounded" title="Attach files">
                   <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -1105,11 +1119,7 @@ function MailboxView() {
                 >
                   <SparklesIcon className="h-4 w-4" />
                 </button>
-                <button className="p-2 hover:bg-gray-100 rounded" title="Formatting options">
-                  <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
+              
                 <button className="p-2 hover:bg-gray-100 rounded" title="Attach files">
                   <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
