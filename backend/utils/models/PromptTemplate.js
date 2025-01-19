@@ -24,7 +24,8 @@ const promptTemplateSchema = new mongoose.Schema({
   targetCompanyContext: new mongoose.Schema({
     companyName: { type: String },
     companyDescription: { type: String },
-    industry: { type: String }
+    industry: { type: String },
+    companyDomain: { type: String }
   }, { strict: false, _id: false }),
   
   recipientContext: new mongoose.Schema({

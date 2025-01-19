@@ -50,6 +50,7 @@ const campaignSchema = new mongoose.Schema({
           companyName: { type: String, required: false },
           companyDescription: { type: String, required: false },
           industry: { type: String, required: false },
+          companyDomain: { type: String, required: false }
         },
         { strict: false, _id: false }
       ),

@@ -208,7 +208,8 @@ class EmailGenerationService {
                     targetCompanyContext: {
                         companyName: recipient?.company,
                         companyDescription: recipient?.Description,
-                        industry: recipient?.industry
+                        industry: recipient?.industry,
+                        companyDomain: recipient?.companyDomain
                     },
                     recipientContext: {
                         name: recipient?.name,
