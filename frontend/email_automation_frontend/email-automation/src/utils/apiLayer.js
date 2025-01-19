@@ -60,6 +60,16 @@ export const authAPI = {
     } catch (error) {
       return false;
     }
+  },
+
+  updateProfile: async (userData) => {
+    try {
+      const response = await api.post('/v1/auth/update', userData);
+      return response.data;
+    } catch (error) {
+      console.error('API Error:', error.response?.data || error.message);
+      throw error.response?.data || error.message;
+    }
   }
 };
 

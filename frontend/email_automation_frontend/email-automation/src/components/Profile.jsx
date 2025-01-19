@@ -1,15 +1,29 @@
 import { useState, useEffect } from 'react';
-import { UserCircleIcon, CalendarIcon, ClockIcon, IdentificationIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, CalendarIcon, ClockIcon, IdentificationIcon, EnvelopeIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 import { authAPI } from '../utils/apiLayer';
 
 function Profile() {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState({
+    username: '',
+    email: ''
+  });
 
   useEffect(() => {
     fetchProfileData();
   }, []);
+
+  useEffect(() => {
+    if (profileData) {
+      setEditedData({
+        username: profileData.username,
+        email: profileData.email
+      });
+    }
+  }, [profileData]);
 
   const fetchProfileData = async () => {
     try {
@@ -24,6 +38,25 @@ function Profile() {
       toast.error('Error loading profile information');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    try {
+      const response = await authAPI.updateProfile(editedData);
+      if (response.success) {
+        setProfileData({
+          ...profileData,
+          ...editedData
+        });
+        setIsEditing(false);
+        toast.success('Profile updated successfully');
+      } else {
+        toast.error('Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Error updating profile information');
     }
   };
 
@@ -57,13 +90,35 @@ function Profile() {
         {/* Profile Details */}
         <div className="mt-8 bg-white rounded-lg shadow-sm">
           <div className="px-6 py-5">
-            <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
+              <button
+                onClick={() => isEditing ? handleUpdate() : setIsEditing(true)}
+                className="flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              >
+                {isEditing ? 'Save Changes' : (
+                  <>
+                    <PencilIcon className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </>
+                )}
+              </button>
+            </div>
             <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div className="flex items-center space-x-3">
                 <IdentificationIcon className="h-5 w-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">User ID</p>
-                  <p className="mt-1 text-sm text-gray-900">{profileData?.userId}</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-500">User Name</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedData.username}
+                      onChange={(e) => setEditedData({ ...editedData, username: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{profileData?.username}</p>
+                  )}
                 </div>
               </div>
               
@@ -82,6 +137,23 @@ function Profile() {
               </div>
 
               <div className="flex items-center space-x-3">
+                <EnvelopeIcon className="h-5 w-5 text-gray-400" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-500">Email</p>
+                  {isEditing ? (
+                    <input
+                      type="email"
+                      value={editedData.email}
+                      onChange={(e) => setEditedData({ ...editedData, email: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{profileData?.email}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* <div className="flex items-center space-x-3">
                 <ClockIcon className="h-5 w-5 text-gray-400" />
                 <div>
                   <p className="text-sm font-medium text-gray-500">Last Updated</p>
@@ -95,13 +167,13 @@ function Profile() {
                     })}
                   </p>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
 
         {/* Activity Section */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm">
+        {/* <div className="mt-8 bg-white rounded-lg shadow-sm">
           <div className="px-6 py-5">
             <h2 className="text-lg font-medium text-gray-900">Account Status</h2>
             <div className="mt-4">
@@ -116,7 +188,7 @@ function Profile() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
