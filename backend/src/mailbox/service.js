@@ -5,7 +5,7 @@ import { addContactTags, getContactsData, updateContact } from "../services/acti
 const emailRepository = new EmailRepository()
 class MailboxService {
 
-    async draftEmail(subject, body, to, from, userId){
+    async draftEmail(subject, body, to, from, attachments, userId){
         try{
             let toRecipient = await Recipient.findOne({ email: to });
             if (!toRecipient) {
@@ -22,6 +22,7 @@ class MailboxService {
             const payload = {
                 subject: subject,
                 body: body,
+                attachments: attachments,
                 from: from,
                 to: toRecipient._id,
                 messageId: draftMessageId,
@@ -114,7 +115,7 @@ class MailboxService {
         }
     }
 
-    async updateDraftEmail(emailId, subject, body, to, from, userId){
+    async updateDraftEmail(emailId, subject, body, to, from, attachments, userId){
         try {
             let emailToSend;
 
@@ -139,7 +140,7 @@ class MailboxService {
                         isDraft: true,
                         isSent: false,
                         createdById: userId,
-                        status: 'draft'
+                        attachments: attachments
                     }
                 );
             } 
@@ -156,7 +157,7 @@ class MailboxService {
         }
     }
 
-    async sendEmail(emailId, subject, body, to, from, message_id, userId) {
+    async sendEmail(emailId, subject, body, to, from, attachments, message_id, userId) {
         try {
             let emailToSend;
 
@@ -164,10 +165,18 @@ class MailboxService {
             if (!toRecipient) {
                 toRecipient = await Recipient.create({ 
                     email: to,
-                    name: to.split('@')[0], // Basic name from email
+                    name: to.split('@')[0],
                     createdById: userId
                 });
             }
+
+            // Process attachments to ensure they're in the correct format
+            const processedAttachments = attachments ? attachments.map(attachment => ({
+                name: attachment.name,
+                type: attachment.type,
+                size: attachment.size,
+                data: attachment.data
+            })) : [];
 
             if (emailId) {
                 // Update existing draft email
@@ -181,7 +190,8 @@ class MailboxService {
                         isDraft: false,
                         isSent: true,
                         messageId: message_id,
-                        createdById: userId
+                        createdById: userId,
+                        attachments: processedAttachments
                     }
                 );
             } else {
@@ -194,24 +204,21 @@ class MailboxService {
                     isDraft: false,
                     isSent: true,
                     messageId: message_id,
-                    createdById: userId
+                    createdById: userId,
+                    attachments: processedAttachments
                 });
             }
 
-            const email = await getContactsData({ email: to })
-
+            const email = await getContactsData({ email: to });
             const id = email?.contacts?.[0]?.id;
-
             if (id) {
-                await addContactTags(id, "9")
+                await addContactTags(id, "9");
             }
-
-            console.log("sentEmailStored==>", emailToSend)
 
             return emailToSend;
         } catch (error) {
             console.error('Service Error:', error);
-            throw error;
+            throw new Error(`Error sending email: ${error.message}`);
         }
     }
 

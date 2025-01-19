@@ -12,7 +12,7 @@ class MailboxHandler {
             const { headers } = req;
             const decoded = jwt.verify(headers.authorization.split(' ')[1]);
             const userId = decoded.userId;
-            const { subject, body, to, from } = req.body;
+            const { subject, body, to, from, attachments } = req.body;
 
             if (!subject || !body || !to) {
                 return res.status(400).json({
@@ -21,7 +21,7 @@ class MailboxHandler {
                 });
             }
 
-            const response = await service.draftEmail(subject, body, to, from, userId)
+            const response = await service.draftEmail(subject, body, to, from, attachments, userId)
             
             res.status(200).json({
                 success: true,
@@ -67,7 +67,7 @@ class MailboxHandler {
             const decoded = jwt.verify(headers.authorization.split(' ')[1]);
             const userId = decoded.userId;
 
-            const { emailId, subject, body, to, from } = req.body;
+            const { emailId, subject, body, to, from, attachments } = req.body;
 
             if (!subject || !body || !to) {
                 return res.status(400).json({
@@ -76,7 +76,7 @@ class MailboxHandler {
                 });
             }
 
-            const response = await service.updateDraftEmail(emailId, subject, body, to, from, userId)
+            const response = await service.updateDraftEmail(emailId, subject, body, to, from, attachments, userId)
             
             res.status(200).json({
                 success: true,
@@ -95,25 +95,52 @@ class MailboxHandler {
 
     async sendEmail(req, res) {
         try {
-            const { emailId, subject, body, to, from } = req.body;
+            const { emailId, subject, body, to, from, attachments } = req.body;
             const { headers } = req;
             const decoded = jwt.verify(headers.authorization.split(' ')[1]);
             const userId = decoded.userId;
+
+            // Process attachments if they exist
+            let processedAttachments = [];
+            if (attachments && Array.isArray(attachments)) {
+                processedAttachments = attachments.map(attachment => ({
+                    name: attachment.name,
+                    type: attachment.type,
+                    size: attachment.size,
+                    data: attachment.data
+                }));
+            }
+
             // Send email using external service
-            const emailSendResp = await sendMail(req.body);
-            console.log("emailSendResp===>", emailSendResp, from);
+            const emailSendResp = await sendMail({
+                emailId,
+                subject,
+                body,
+                to,
+                from,
+                attachments: processedAttachments
+            });
 
             // Update or create email in database
-            const storeSentMail = await service.sendEmail(emailId, subject, body, to, from, emailSendResp, userId);
+            const storeSentMail = await service.sendEmail(
+                emailId,
+                subject,
+                body,
+                to,
+                from,
+                processedAttachments, // Pass the processed attachments
+                emailSendResp,
+                Number(userId)
+            );
 
             res.status(200).json({
                 success: true,
                 message: "Email sent!",
-                // data: storeSentMail
+                data: storeSentMail
             });
 
         } catch (error) {
-            console.log("Handler Error===>", error);
+            console.error("Handler Error===>", error);
             res.status(500).json({
                 message: "Internal Server Error",
                 error: error.message

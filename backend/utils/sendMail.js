@@ -4,6 +4,7 @@ export const sendMail = async (emailData) => {
     const subject = emailData.subject || emailData.Subject || '';
     const body = emailData.body || emailData.Body || '';
     const to = emailData.to;
+    const attachments = emailData.attachments || [];
 
     // Create a FormData instance
     console.log(emailData)
@@ -15,6 +16,20 @@ export const sendMail = async (emailData) => {
     form.append('o:tracking', 'yes')
     form.append('o:tracking-opens', 'yes')
     form.append('o:tracking-clicks', 'yes')
+
+    // Handle attachments
+    if (attachments && attachments.length > 0) {
+        attachments.forEach((attachment, index) => {
+            // Decode base64 data
+            const binaryData = Buffer.from(attachment.data.split(',')[1], 'base64');
+            
+            // Create a Blob-like object for the attachment
+            const blob = new Blob([binaryData], { type: attachment.type });
+            
+            // Append the file to FormData with the original filename
+            form.append('attachment', blob, attachment.name);
+        });
+    }
 
     const domainName = process.env.MAILGUN_URL // Update with your domain name
     const response = await fetch(`https://api.mailgun.net/v3/${domainName}/messages`, {
