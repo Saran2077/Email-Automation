@@ -1,16 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Draggable from 'react-draggable'
 import { 
   InboxIcon, 
   PaperAirplaneIcon, 
-  TrashIcon, 
   StarIcon as StarIconOutline,
   XMarkIcon,
   DocumentTextIcon,
   ArrowPathIcon,
   MinusIcon,
   ArrowsPointingOutIcon,
-  SparklesIcon
+  SparklesIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DocumentIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { mailboxAPI } from '../utils/apiLayer'
@@ -28,15 +30,20 @@ function MailboxView() {
     inbox: [],
     starred: [],
     drafts: [],
-    sent: [],
-    trash: []
+    sent: []
   })
   const [loading, setLoading] = useState(false)
   const location = useLocation();
   const [error, setError] = useState(null)
   const [minimizedEmails, setMinimizedEmails] = useState([])
   const [isMinimized, setIsMinimized] = useState(false)
-  const [editedEmail, setEditedEmail] = useState(null)
+  const [editedEmail, setEditedEmail] = useState({
+    id: null,
+    subject: '',
+    to: '',
+    body: '',
+    attachments: []
+  })
   const [showComposeModal, setShowComposeModal] = useState(false)
   const [newEmail, setNewEmail] = useState({
     to: '',
@@ -51,6 +58,9 @@ function MailboxView() {
   const [showEmail, setShowEmail] = useState(false);
   const [showAIPrompt, setShowAIPrompt] = useState(false);
   const [aiPrompt, setAIPrompt] = useState('');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const fileInputRef = useRef(null);
 
   // Fetch all emails on initial load
   useEffect(() => {
@@ -90,11 +100,13 @@ function MailboxView() {
   // Initialize edited email when a draft is selected
   useEffect(() => {
     if (selectedEmail && activeFolder === 'drafts') {
+      console.log('Selected Email Attachments:', selectedEmail.attachments); // Debug log
       setEditedEmail({
         id: selectedEmail.id,
         subject: selectedEmail.subject,
         to: selectedEmail.to,
-        body: selectedEmail.preview
+        body: selectedEmail.preview,
+        attachments: selectedEmail.attachments || []
       });
     } else if (selectedEmail) {
       navigate(`/emailView/${selectedEmail.id}`);
@@ -126,7 +138,8 @@ function MailboxView() {
         from: draft.from,
         date: new Date(draft.createdAt).toLocaleDateString(),
         isDraft: true,
-        starred: draft.isStarred
+        starred: draft.isStarred,
+        attachments: draft.attachments || []
       }));
 
       setEmails(prev => ({
@@ -266,7 +279,6 @@ function MailboxView() {
     { name: 'Starred', icon: StarIconSolid, id: 'starred', count: emails.starred.length },
     { name: 'Drafts', icon: DocumentTextIcon, id: 'drafts', count: emails.drafts.length },
     { name: 'Sent', icon: PaperAirplaneIcon, id: 'sent', count: emails.sent.length },
-    { name: 'Trash', icon: TrashIcon, id: 'trash', count: emails.trash.length },
   ]
 
   const toggleStar = async (email) => {
@@ -318,7 +330,8 @@ function MailboxView() {
     setFormErrors({
       to: '',
       subject: '',
-      body: ''
+      body: '',
+      attachments: []
     });
 
     // For drafts, we'll only validate if fields are filled - if they are, they should be valid
@@ -326,7 +339,8 @@ function MailboxView() {
     const errors = {
       to: '',
       subject: '',
-      body: ''
+      body: '',
+      attachments: []
     };
 
     // Only validate email format if an email is provided
@@ -354,6 +368,7 @@ function MailboxView() {
         subject: editedEmail.subject,
         body: editedEmail.body,
         to: editedEmail.to,
+        attachments: editedEmail.attachments
       };
 
       const response = await mailboxAPI.updateDraft(draftData);
@@ -420,7 +435,8 @@ function MailboxView() {
         subject: email.subject,
         body: email.body,
         to: email.to,
-        from: "betagamer580@gmail.com"
+        from: "betagamer580@gmail.com",
+        attachments: email.attachments
       };
 
       const response = await mailboxAPI.sendEmail(emailData);
@@ -428,11 +444,12 @@ function MailboxView() {
       if (response.success) {
         toast.success('Email sent successfully!');
         setSelectedEmail(null);
+        setAttachments([]);
         await fetchSentEmails();
         setEmails((prev) => ({
           ...prev,
           [activeFolder]: prev[activeFolder].filter(e => e.id !== email?.id)
-        }))
+        }));
         
       } else {
         throw new Error('Failed to send email');
@@ -518,9 +535,10 @@ function MailboxView() {
       
       const emailData = {
         subject: newEmail.subject,
-        body: newEmail.body, // The body is already in HTML format
+        body: newEmail.body,
         to: newEmail.to,
-        from: "betagamer580@gmail.com"
+        from: "betagamer580@gmail.com",
+        attachments: attachments
       };
 
       const response = await mailboxAPI.sendEmail(emailData);
@@ -529,8 +547,7 @@ function MailboxView() {
         toast.success('Email sent successfully!');
         setShowComposeModal(false);
         setNewEmail({ to: '', subject: '', body: '' });
-        
-        // Refresh the sent emails list
+        setAttachments([]);
         await fetchSentEmails();
       } else {
         throw new Error('Failed to send email');
@@ -668,36 +685,91 @@ function MailboxView() {
     }
   };
 
+  const handleFileUpload = (e, isDraft = false) => {
+    const files = Array.from(e.target.files);
+    
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newAttachment = {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: reader.result
+        };
+
+        if (isDraft) {
+          setEditedEmail(prev => ({
+            ...prev,
+            attachments: [...prev.attachments, newAttachment]
+          }));
+        } else {
+          setAttachments(prev => [...prev, newAttachment]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeAttachment = (index) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeDraftAttachment = (index) => {
+    setEditedEmail(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
+    }));
+  };
+
   return (
     <div className="flex h-full bg-gray-50">
       {/* Left Sidebar */}
-      <div className="w-72 bg-white shadow-lg">
-        <div className="p-6">
+      <div className={`${isSidebarCollapsed ? 'w-16' : 'w-72'} bg-white shadow-lg transition-all duration-300 relative`}>
+        {/* Collapse Toggle Button */}
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="absolute -right-3 top-20 bg-white rounded-full p-1 shadow-md hover:bg-gray-50 z-10"
+        >
+          {isSidebarCollapsed ? (
+            <ChevronRightIcon className="h-4 w-4 text-gray-600" />
+          ) : (
+            <ChevronLeftIcon className="h-4 w-4 text-gray-600" />
+          )}
+        </button>
+
+        <div className={`p-6 ${isSidebarCollapsed ? 'px-2' : ''}`}>
           <button 
             onClick={() => setShowComposeModal(true)}
-            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg px-6 py-3 hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            className={`w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg px-6 py-3 hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${
+              isSidebarCollapsed ? 'px-2' : ''
+            }`}
           >
-            Compose
+            {isSidebarCollapsed ? '+' : 'Compose'}
           </button>
         </div>
-        <nav className="mt-4 px-3">
+
+        <nav className={`mt-4 ${isSidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {folders.map((folder) => (
             <button
               key={folder.id}
               onClick={() => setActiveFolder(folder.id)}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg mb-1 transition-all duration-200 ${
+              className={`w-full flex items-center justify-between ${
+                isSidebarCollapsed ? 'px-2' : 'px-4'
+              } py-3 rounded-lg mb-1 transition-all duration-200 ${
                 activeFolder === folder.id
                   ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 font-medium shadow-sm'
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
+              title={isSidebarCollapsed ? folder.name : ''}
             >
               <div className="flex items-center">
-                <folder.icon className={`h-5 w-5 mr-3 ${
+                <folder.icon className={`h-5 w-5 ${!isSidebarCollapsed && 'mr-3'} ${
                   activeFolder === folder.id ? 'text-indigo-600' : 'text-gray-400'
                 }`} />
-                <span className="text-sm">{folder.name}</span>
+                {!isSidebarCollapsed && <span className="text-sm">{folder.name}</span>}
               </div>
-              {folder.count > 0 && (
+              {!isSidebarCollapsed && folder.count > 0 && (
                 <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                   activeFolder === folder.id 
                     ? 'bg-indigo-100 text-indigo-600' 
@@ -785,7 +857,8 @@ function MailboxView() {
       {/* Updated Draft Email Modal */}
       {selectedEmail && activeFolder === 'drafts' && editedEmail && (
         <Draggable handle=".modal-handle" bounds="body">
-          <div className="fixed bottom-0 right-24 w-[600px] bg-white rounded-t-lg shadow-xl z-50 flex flex-col">
+          <div className="fixed bottom-0 right-24 w-[600px] bg-white rounded-t-lg shadow-xl z-50 flex flex-col" 
+               style={{ maxHeight: '90vh' }}>
             {/* Modal Header */}
             <div className="modal-handle flex items-center justify-between px-4 py-2 bg-gray-100 rounded-t-lg cursor-move">
               <h3 className="text-sm font-medium text-gray-700">Edit Draft</h3>
@@ -808,7 +881,7 @@ function MailboxView() {
             </div>
 
             {/* Email Form */}
-            <div className="flex-1 p-4">
+            <div className="flex-1 p-4 overflow-y-auto">
               {/* Recipients */}
               <div className="border-b">
                 <div className="flex items-center py-2">
@@ -883,6 +956,77 @@ function MailboxView() {
                 />
 
               </div>
+
+              {/* Attachments */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Attachments
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
+                  >
+                    <DocumentIcon className="h-4 w-4 mr-1" />
+                    Add Files
+                  </button>
+                </div>
+                
+                <input
+                  type="file"
+                  className="hidden"
+                  ref={fileInputRef}
+                  multiple
+                  onChange={(e) => handleFileUpload(e, true)}
+                />
+
+                {/* Display existing and new attachments */}
+                {editedEmail.attachments && editedEmail.attachments.length > 0 && (
+                  <div className="space-y-2 mt-2">
+                    {editedEmail.attachments.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <DocumentIcon className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">{file.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {(file.size / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeDraftAttachment(index)}
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <XMarkIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Drag and drop zone */}
+                <div className="mt-2">
+                  <label className="flex flex-col w-full h-20 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+                    <div className="flex flex-col items-center justify-center pt-5">
+                      <DocumentIcon className="h-6 w-6 text-gray-400" />
+                      <p className="text-sm text-gray-500">
+                        Drag and drop files here or click to browse
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      multiple
+                      onChange={(e) => handleFileUpload(e, true)}
+                    />
+                  </label>
+                </div>
+              </div>
                
             </div>
 
@@ -917,12 +1061,12 @@ function MailboxView() {
                 >
                   <SparklesIcon className="h-4 w-4" />
                 </button>
-                <button className="p-2 hover:bg-gray-100 rounded" title="Formatting options">
-                  <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded" title="Attach files">
+               
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded" 
+                  title="Attach files"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
@@ -965,7 +1109,8 @@ function MailboxView() {
 
       {showComposeModal && (
         <Draggable handle=".modal-handle" bounds="body">
-          <div className="fixed bottom-0 right-24 w-[600px] bg-white rounded-t-xl shadow-2xl z-50 flex flex-col">
+          <div className="fixed bottom-0 right-24 w-[600px] bg-white rounded-t-xl shadow-2xl z-50 flex flex-col"
+               style={{ maxHeight: '90vh' }}>
             {/* Modal Header */}
             <div className="modal-handle flex items-center justify-between px-4 py-2 bg-gray-100 rounded-t-lg cursor-move">
               <h3 className="text-sm font-medium text-gray-700">New Message</h3>
@@ -991,7 +1136,7 @@ function MailboxView() {
             </div>
 
             {/* Email Form */}
-            <div className="flex-1 p-4">
+            <div className="flex-1 p-4 overflow-y-auto">
               {/* Recipients */}
               <div className="flex flex-col border-b py-2">
                 <div className="flex items-center">
@@ -1066,6 +1211,86 @@ function MailboxView() {
                   onUpdateSubject={(newSubject) => handleComposeInputChange('subject', newSubject)}
                 />
               </div>
+
+              {/* Attachments */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Attachments
+                </label>
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col w-full h-20 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+                    <div className="flex flex-col items-center justify-center pt-5">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="text-sm text-gray-600">
+                        Click to upload or drag and drop
+                      </p>
+                    </div>
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      multiple 
+                      onChange={handleFileUpload}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Display uploaded files */}
+              {attachments.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Uploaded Files</h3>
+                  <div className="space-y-2">
+                    {attachments.map((file, index) => (
+                      <div 
+                        key={index} 
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <svg 
+                            className="w-5 h-5 text-gray-500" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" 
+                            />
+                          </svg>
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">{file.name}</p>
+                            <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setAttachments(attachments.filter((_, i) => i !== index));
+                          }}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <svg 
+                            className="w-5 h-5" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Footer */}
@@ -1105,12 +1330,12 @@ function MailboxView() {
                 >
                   <SparklesIcon className="h-4 w-4" />
                 </button>
-                <button className="p-2 hover:bg-gray-100 rounded" title="Formatting options">
-                  <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded" title="Attach files">
+              
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded" 
+                  title="Attach files"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <svg className="w-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
@@ -1167,6 +1392,15 @@ function MailboxView() {
           </div>
         </div>
       )}
+
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        multiple
+        onChange={handleFileUpload}
+      />
     </div>
   )
 }

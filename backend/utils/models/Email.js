@@ -1,6 +1,13 @@
 import mongoose from 'mongoose';
 import { Counter } from './Counter.js';
 
+const attachmentSchema = new mongoose.Schema({
+  name: String,
+  type: String,
+  size: Number,
+  data: String  // For base64 encoded data
+});
+
 const emailSchema = new mongoose.Schema({
   emailId: {
     type: Number,
@@ -29,6 +36,7 @@ const emailSchema = new mongoose.Schema({
     ref: 'Recipient',
     required: true
   },
+  attachments: [attachmentSchema],
   status: {
     type: [String],
     enum: ['delivered', 'accepted', 'complaints', 'unsubscribes', 'opened', 'clicked', 'hard-bounced', 'soft-bounced', 'unopened'],
