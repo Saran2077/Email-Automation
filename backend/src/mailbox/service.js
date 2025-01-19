@@ -157,7 +157,7 @@ class MailboxService {
         }
     }
 
-    async sendEmail(emailId, subject, body, to, from, attachments, message_id, userId) {
+    async sendEmail(emailId, subject, body, to, from, attachments = [], messageId, userId) {
         try {
             let emailToSend;
 
@@ -170,8 +170,8 @@ class MailboxService {
                 });
             }
 
-            // Process attachments to ensure they're in the correct format
-            const processedAttachments = attachments ? attachments.map(attachment => ({
+            // Ensure attachments is always an array
+            const processedAttachments = Array.isArray(attachments) ? attachments.map(attachment => ({
                 name: attachment.name,
                 type: attachment.type,
                 size: attachment.size,
@@ -189,7 +189,7 @@ class MailboxService {
                         from,
                         isDraft: false,
                         isSent: true,
-                        messageId: message_id,
+                        messageId: messageId,
                         createdById: userId,
                         attachments: processedAttachments
                     }
@@ -203,7 +203,7 @@ class MailboxService {
                     from,
                     isDraft: false,
                     isSent: true,
-                    messageId: message_id,
+                    messageId: messageId,
                     createdById: userId,
                     attachments: processedAttachments
                 });

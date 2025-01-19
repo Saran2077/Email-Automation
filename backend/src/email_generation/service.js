@@ -97,8 +97,8 @@ class EmailGenerationService {
                 };
                 stage = recipient?.stage || 'CONTACT';
             } else {
-                const recipient = await RecipientRepository.getByEmail(toEmail);
-                if (!recipient) throw new Error('Recipient not found');
+                // const recipient = await RecipientRepository.getByEmail(toEmail);
+                // if (!recipient) throw new Error('Recipient not found');
                 const newTemplate = await this.createDefaultTemplate(recipient);
                 contextData = {
                     senderCompanyContext: newTemplate?.senderCompanyContext || {},
@@ -124,7 +124,13 @@ class EmailGenerationService {
 
             console.log("Payload: ", payload);
 
-            const prompt = getPromptForStage(payload);
+            const companyDomain = recipient?.companyDomain || "";
+            const companyDescription = recipient?.Description || "";
+            const industry = recipient?.industry || "";
+            const companyName = recipient?.company || "";
+
+            
+            const prompt = await getPromptForStage(payload, companyDomain, companyDescription, industry, companyName);
             console.log("Generated Prompt: ", prompt);
 
             const response = await azureOpenai.chat.completions.create({

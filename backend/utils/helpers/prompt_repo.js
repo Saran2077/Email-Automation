@@ -1,13 +1,15 @@
 // Template constants
+import axios from 'axios';
+
 const STAGE_TEMPLATES = {
     CONTACT: {
         role: "As an expert email copywriter, craft an initial outreach email for a first-time contact.",
         guidelines: [
             "Start with a compelling hook related to their industry trends or challenges",
             "Briefly introduce yourself and establish credibility",
-            "Show you've done research about that company",
-            "Focus on their potential pain points based on their industry/role",
-            "End with a soft call-to-action (request for 15-min chat)",
+            "Show you've done research about that company with the help of the context COMPANY_RESEARCH_DATA",
+            "Focus on their potential pain points based on their industry/role using the context TECHNOLOGY_CHALLENGES",
+            "End with a soft call-to-action",
             "Keep the email under 200 words"
         ],
         tone: [
@@ -245,9 +247,58 @@ const buildStageTemplate = (stage) => {
     `;
 };
 
-export const getPromptForStage = ({ stage, contextData, customContext, customPrompt=null, aiPrompt = '', customInstructions = '' }) => {
+export const getPromptForStage = async ({ stage, contextData, customContext, customPrompt=null, aiPrompt = '', customInstructions = '' }, companyDomain, companyDescription, industry, companyName) => {
     // Deep clone the contextData to avoid mutations
-    let finalContext = JSON.parse(JSON.stringify(contextData));
+    console.log("company domain::", companyDomain)
+    let finalContext = JSON.parse(JSON.stringify(contextData))
+    let companyResearchData;
+    let technologyChallengesData;
+
+    // if(companyDomain) {
+    //    //make mcp api calls to get the internet extracted data
+    //    try {
+    //     const companyResearchPayload = {
+    //       "query": `Investigate if the company referred to as ${companyName} has been investing in AI. 
+    //         Research method: 
+    //             1. Search for news articles, press releases, or official statements from ${companyDomain} and the company's LinkedIn profile using terms like \"AI investment\", \"artificial intelligence investment\", \"AI acquisition\", or \"AI partnership\".
+    //             2. If insufficient information is found, expand the search to credible business and tech news sites. Data to be retrieved: 1. Evidence of AI investment (e.g., investment amounts, AI-related projects, partnerships) 2. Dates and sources of any mentions 3. Relevant quotes or statements Provide findings including \"evidence\", \"date\", \"source\", and \"quote\".  
+    //         `
+    //     }
+
+    //     const technologyChallengesPayload = {
+    //       "query": `Act as a specialized company analyst. Based on domain in the column ${companyDomain} perform a detailed search for issues or challenges related to technology specific to the company or industry level (${industry}), avoiding large macro policy issues and government-related topics.
+    //         Research steps:
+    //             1. Search the company domain and news articles.
+    //             2. Look for technology-related challenges or issues reported by the company, industry forums, or people associated with it.
+    //             3. Confirm information credibility by cross-referencing different sources.
+    //             4. Focus on recent and localized content, avoiding broad national or policy-related discussions.
+    //             Present the data in the format including:
+    //             1. Description of the issue
+    //             2. Source URL
+    //             3. Date (if available)
+    //             4. Context or quote from the source
+    //             In case no relevant data is found, respond with 'No specific technology issues found for ${companyDomain}'`
+    //     }
+
+    //     const companyResearchResult = await axios.post(`https://a7f9-2001-4490-4e81-af15-1925-5995-e016-79c1.ngrok-free.app/process_query`, companyResearchPayload)
+    //     if (companyResearchResult?.data?.status === 'success') {
+    //         companyResearchData = companyResearchResult.data.result;
+    //     }
+
+    //     const technologyChallengesResult = await axios.post(`https://a7f9-2001-4490-4e81-af15-1925-5995-e016-79c1.ngrok-free.app/process_query`, technologyChallengesPayload)
+    //     if (technologyChallengesResult?.data?.status === 'success') {
+    //         technologyChallengesData = technologyChallengesResult.data.result;
+    //     }
+
+
+    //    } catch (error) {
+    //     console.error("Error calling MCP API: ", error)
+    //     throw error;
+    //    }
+
+    // }
+
+    // let finalContext = JSON.parse(JSON.stringify(contextData));
     
     if (customContext) {
         finalContext = mergeCustomContext(finalContext, customContext);
@@ -268,6 +319,16 @@ export const getPromptForStage = ({ stage, contextData, customContext, customPro
 
     return `
         ${customPrompt ? customPrompt?.content : stageTemplate}
+
+        ${companyResearchData ? `
+        COMPANY_RESEARCH_DATA:
+        ${companyResearchData}
+        ` : ''}
+
+        ${technologyChallengesData ? `
+        TECHNOLOGY_CHALLENGES:
+        ${technologyChallengesData}
+        ` : ''}
 
         ${baseContext}
 

@@ -14,6 +14,6 @@ router.post('/generate_emails/:id', campaignHandler.generateEmails)
 router.post('/send_emails/:id', authenticate , campaignHandler.sendEmails)
 router.post('/regenerate/:id', authenticate , campaignHandler.regenerate)
 router.post('/update/:id', campaignHandler.update)
-router.delete('/:id', campaignHandler.delete)
+router.delete('/delete/:id', campaignHandler.delete)
 
 export default router;

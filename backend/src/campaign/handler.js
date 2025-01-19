@@ -277,7 +277,6 @@ class CampaignHandler {
     async sendEmails(req, res) {
         try {
             const { id } = req.params;
-
             const { headers } = req;
             const decoded = jwt.verify(headers.authorization.split(' ')[1]);
             const userId = decoded.userId;
@@ -291,34 +290,67 @@ class CampaignHandler {
                 });
             }
 
-            const updateCampaign = await campaignService.update({ campaignId: id}, { status: 'Sending' });
+            // Update campaign status to Sending
+            await campaignService.update({ campaignId: id}, { status: 'Sending' });
 
+            // Send initial response
             res.status(200).json({
                 status: 'success',
                 data: 'Sending Emails for campaign...'
             });
             
-            // Send emails here using the provided data and Mailgun API
-            for (const campaign of campaigns?.generatedEmails || []) {
-                const emailSendResp = await sendMail({
-                    from: "betagamer580@gmail.com",
-                    to: campaign.email,
-                    subject: campaign.subject,
-                    body: campaign.body
-                })
+            // Process emails asynchronously
+            (async () => {
+                try {
+                    // Send emails here using the provided data and Mailgun API
+                    for (const campaign of campaigns?.generatedEmails || []) {
+                        const emailPayload = {
+                            from: "betagamer580@gmail.com",
+                            to: campaign.email,
+                            subject: campaign.subject,
+                            body: campaign.body,
+                            attachments: [] // Default empty array since we don't have attachments
+                        };
 
-                const storeSentMail = await emailService.sendEmail(null, campaign.subject, campaign.body, campaign?.email, "betagamer580@gmail.com", emailSendResp, userId);
-            }
-            
-            
-            const updatedCampaign = await campaignService.update({ campaignId: id}, { status: 'Idle', generatedEmails: [] });
+                        const emailSendResp = await sendMail(emailPayload);
+
+                        await emailService.sendEmail(
+                            null, 
+                            campaign.subject, 
+                            campaign.body, 
+                            campaign?.email, 
+                            "betagamer580@gmail.com", 
+                            [], // Pass empty array for attachments
+                            emailSendResp, // This is the messageId
+                            userId
+                        );
+                    }
+                    
+                    // Update campaign status after all emails are sent
+                    await campaignService.update(
+                        { campaignId: id}, 
+                        { status: 'Idle', generatedEmails: [] }
+                    );
+                } catch (error) {
+                    console.error('Async email sending error:', error);
+                    // Update campaign status to Failed instead of Error
+                    await campaignService.update(
+                        { campaignId: id}, 
+                        { status: 'Failed' }
+                    );
+                }
+            })();
+
         } catch (error) {
             console.error('Send Emails in Campaign error:', error);
-            return res.status(500).json({
-                status: 'error',
-                message: 'Failed to Send Emails in Campaign',
-                ...(process.env.NODE_ENV === 'development' && { detail: error.message })
-            });
+            // Only send error response if headers haven't been sent
+            if (!res.headersSent) {
+                return res.status(500).json({
+                    status: 'error',
+                    message: 'Failed to Send Emails in Campaign',
+                    ...(process.env.NODE_ENV === 'development' && { detail: error.message })
+                });
+            }
         }
     }
 

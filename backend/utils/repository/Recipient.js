@@ -27,7 +27,7 @@ class RecipientRepository {
 
   async getByEmail(email, userId) {
     try {
-      return await Recipient.findOne({ email, createdById: userId });
+      return await Recipient.findOne({ email });
     } catch (error) {
       throw new Error(`Error fetching recipient: ${error.message}`);
     }
