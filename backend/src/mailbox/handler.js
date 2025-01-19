@@ -102,7 +102,7 @@ class MailboxHandler {
 
             // Process attachments if they exist
             let processedAttachments = [];
-            if (attachments && Array.isArray(attachments)) {
+            if (attachments && Array.isArray(attachments) && attachments.length) {
                 processedAttachments = attachments.map(attachment => ({
                     name: attachment.name,
                     type: attachment.type,

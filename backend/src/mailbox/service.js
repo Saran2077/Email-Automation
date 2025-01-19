@@ -170,8 +170,8 @@ class MailboxService {
                 });
             }
 
-            // Ensure attachments is always an array
-            const processedAttachments = Array.isArray(attachments) ? attachments.map(attachment => ({
+            // Process attachments to ensure they're in the correct format
+            const processedAttachments = (attachments && Array.isArray(attachments)) ? attachments.map(attachment => ({
                 name: attachment.name,
                 type: attachment.type,
                 size: attachment.size,
