@@ -82,13 +82,28 @@ export const recipientAPI = {
     }
   },
 
-  list: async (params) => {
+  list: async (params = {}) => {
     try {
       const response = await api.get('/v1/recipients/list', {
-        params: params
+        params: {
+          page: params.page || 1,
+          limit: params.limit || 10,
+          search: params.search
+        }
       });
-      return response.data;
+
+      // Match the backend response structure
+      return {
+        data: response.data.recipients || [], // Changed from response.data.data
+        pagination: {
+          total: response.data.total,
+          page: parseInt(response.data.page),
+          totalPages: response.data.totalPages,
+          limit: params.limit || 10
+        }
+      };
     } catch (error) {
+      console.error('API Error:', error);
       throw error.response?.data || error.message;
     }
   },

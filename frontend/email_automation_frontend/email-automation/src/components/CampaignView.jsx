@@ -24,6 +24,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { campaignAPI, promptAPI, recipientAPI } from '../utils/apiLayer';
 import { IconButton } from '@mui/material';
 import { EyeIcon } from 'lucide-react';
+import { debounce } from 'lodash';
 
 const CampaignView = () => {
   const { campaignId } = useParams();
@@ -39,6 +40,12 @@ const CampaignView = () => {
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [generatedEmails, setGeneratedEmails] = useState([]);
   const [form] = Form.useForm();
+  const [recipientsPagination, setRecipientsPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0
+  });
+  const [searchText, setSearchText] = useState('');
 
   // Fetch campaign details
   const fetchCampaign = async () => {
@@ -55,21 +62,61 @@ const CampaignView = () => {
     }
   };
 
-  const fetchAvailableRecipients = async () => {
+  const handleSearch = debounce((value) => {
+    setSearchText(value);
+    fetchAvailableRecipients(1, recipientsPagination.pageSize, value);
+  }, 500);
+
+  const fetchAvailableRecipients = async (page = 1, pageSize = 10, search = '') => {
     try {
       setRecipientsLoading(true);
-      const response = await recipientAPI.list();
-      setAvailableRecipients(response.recipients);
+      const response = await recipientAPI.list({
+        page,
+        limit: pageSize,
+        search
+      });
+      
+      if (response?.data) {
+        setAvailableRecipients(response.data);
+        setRecipientsPagination({
+          current: response.pagination.page,
+          pageSize,
+          total: response.pagination.total,
+          totalPages: response.pagination.totalPages
+        });
+      } else {
+        console.error('Unexpected API response structure:', response);
+        message.error('Invalid data format received');
+      }
     } catch (error) {
+      console.error('Fetch recipients error:', error);
       message.error('Failed to fetch recipients');
     } finally {
       setRecipientsLoading(false);
     }
   };
 
+  // Handle modal visibility
+  const showAddRecipientModal = () => {
+    setAddRecipientModal(true);
+    // Fetch recipients only when modal is opened
+    fetchAvailableRecipients(1, recipientsPagination.pageSize);
+  };
+
+  const handleModalCancel = () => {
+    setAddRecipientModal(false);
+    setSelectedRecipientIds([]);
+    setSearchText('');
+  };
+
+  // Add pagination handler
+  const handleRecipientsTableChange = (pagination) => {
+    fetchAvailableRecipients(pagination.current, pagination.pageSize, searchText);
+  };
+
   useEffect(() => {
-    fetchAvailableRecipients()
-  }, [])
+    fetchAvailableRecipients(1, recipientsPagination.pageSize);
+  }, []);
 
   const handleAddSelectedRecipients = async () => {
     try {
@@ -88,6 +135,7 @@ const CampaignView = () => {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
+      render: (text) => text || 'N/A'
     },
     {
       title: 'Email',
@@ -98,6 +146,19 @@ const CampaignView = () => {
       title: 'Company',
       dataIndex: 'company',
       key: 'company',
+      render: (text) => text || 'N/A'
+    },
+    {
+      title: 'Designation',
+      dataIndex: 'designation',
+      key: 'designation',
+      render: (text) => text || 'N/A'
+    },
+    {
+      title: 'Stage',
+      dataIndex: 'stage',
+      key: 'stage',
+      render: (text) => <Tag color="blue">{text}</Tag>
     }
   ];
 
@@ -316,13 +377,13 @@ const CampaignView = () => {
       <Card 
         title="Recipients" 
         extra={
-          campaign?.status === 'Idle' && (
+          campaign?.status === "Idle" && (
             <Button
               type="primary"
               icon={<UserAddOutlined />}
-              onClick={() => setAddRecipientModal(true)}
+              onClick={showAddRecipientModal}
             >
-              Add Recipient
+              Add Recipients
             </Button>
           )
         }
@@ -350,70 +411,52 @@ const CampaignView = () => {
         </Card>
       )}
 
-      {/* Add Recipient Modal */}
-      {/* <Modal
-        title="Add Recipient"
-        open={addRecipientModal}
-        onOk={form.submit}
-        onCancel={() => {
-          setAddRecipientModal(false);
-          form.resetFields();
-        }}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleAddRecipient}
-        >
-          <Form.Item
-            name="name"
-            label="Name"
-            rules={[{ required: true, message: 'Please enter name' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: 'Please enter email' },
-              { type: 'email', message: 'Please enter valid email' }
-            ]}
-          >
-            <Input />
-          </Form.Item>
-        </Form>
-      </Modal> */}
-
-<Modal
+      {/* Add Recipients Modal */}
+      <Modal
         title="Add Recipients"
         open={addRecipientModal}
-        onOk={handleAddSelectedRecipients}
-        onCancel={() => {
-          setAddRecipientModal(false);
-          setSelectedRecipientIds([]);
-        }}
-        width={800}
-        okText="Add Selected Recipients"
-        okButtonProps={{ disabled: selectedRecipientIds.length === 0 }}
-      >
-        <div className="mb-4">
-          <Button 
-            type="primary" 
-            onClick={fetchAvailableRecipients}
-            loading={recipientsLoading}
+        onCancel={handleModalCancel}
+        footer={[
+          <Button key="cancel" onClick={handleModalCancel}>
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            disabled={selectedRecipientIds.length === 0}
+            onClick={handleAddSelectedRecipients}
           >
-            Refresh Recipients List
+            Add Selected Recipients
           </Button>
-        </div>
-        <Table
-          rowSelection={rowSelection}
-          columns={availableRecipientColumns}
-          dataSource={availableRecipients}
-          rowKey="_id"
-          loading={recipientsLoading}
-          scroll={{ y: 400 }}
-        />
+        ]}
+        width={800}
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Input.Search
+            placeholder="Search recipients..."
+            allowClear
+            onSearch={handleSearch}
+            style={{ marginBottom: 16 }}
+          />
+
+          <Table
+            rowKey="_id"
+            dataSource={availableRecipients}
+            columns={availableRecipientColumns}
+            rowSelection={{
+              selectedRowKeys: selectedRecipientIds,
+              onChange: (selectedRowKeys) => setSelectedRecipientIds(selectedRowKeys),
+            }}
+            pagination={{
+              ...recipientsPagination,
+              showSizeChanger: true,
+              showTotal: (total) => `Total ${total} items`,
+              pageSizeOptions: ['10', '20', '50']
+            }}
+            onChange={handleRecipientsTableChange}
+            loading={recipientsLoading}
+          />
+        </Space>
       </Modal>
 
       {/* Email Preview Drawer */}

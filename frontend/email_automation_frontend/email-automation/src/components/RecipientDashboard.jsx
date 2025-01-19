@@ -7,7 +7,10 @@ import { EyeIcon, Filter, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 function RecipientDashboard() {
-  const [recipients, setRecipients] = useState([])
+  const [recipients, setRecipients] = useState({
+    recipients: [],
+    total: 0
+  })
   const [currentPage, setCurrentPage] = useState(1)
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -52,12 +55,19 @@ function RecipientDashboard() {
         search: filters.search,
         stage: filters.stage === 'all' ? undefined : filters.stage
       })
-      setRecipients(response || [])
+      
+      setRecipients({
+        recipients: response.data || [],
+        total: response.pagination.total
+      })
       setError(null)
     } catch (err) {
       console.error('Error fetching recipients:', err)
       setError('Failed to load recipients')
-      setRecipients([])
+      setRecipients({
+        recipients: [],
+        total: 0
+      })
     } finally {
       setLoading(false)
     }
@@ -72,7 +82,10 @@ function RecipientDashboard() {
     } catch (err) {
       console.error('Error fetching recipients:', err)
       setError('Failed to load recipients')
-      setRecipients([])
+      setRecipients({
+        recipients: [],
+        total: 0
+      })
     } finally {
       setDashboardMetricsLoading(false)
     }
@@ -82,9 +95,12 @@ function RecipientDashboard() {
     try {
       await recipientAPI.updateStage(recipientData?._id, { stage: newStage, email: recipientData?.email })
       setRecipients((prevRecipients) =>
-        prevRecipients.map((recipient) =>
-          recipient._id === recipientData?._id ? { ...recipient, stage: newStage } : recipient
-        )
+        ({
+          ...prevRecipients,
+          recipients: prevRecipients.recipients.map((recipient) =>
+            recipient._id === recipientData?._id ? { ...recipient, stage: newStage } : recipient
+          )
+        })
       )
     } catch (err) {
       console.error('Error updating stage:', err)
@@ -206,8 +222,8 @@ function RecipientDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {recipients?.recipients.map((recipient) => (
-                <tr key={recipient._id}>
+              {recipients?.recipients?.map((recipient) => (
+                <tr key={recipient.recipientId}>
                   <td className="px-6 py-4 whitespace-nowrap">{recipient.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{recipient.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{recipient.company}</td>
@@ -240,7 +256,7 @@ function RecipientDashboard() {
             <Pagination
               current={currentPage}
               onChange={setCurrentPage}
-              total={recipients?.total}
+              total={recipients.total}
               pageSize={10}
               showSizeChanger={false}
             />
