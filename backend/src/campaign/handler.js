@@ -3,9 +3,11 @@ import mongoose from 'mongoose';
 import JsonWebToken from "../../middleware/jwt.js";
 import EmailGenerationService from "../email_generation/service.js";
 import EmailService from "../mailbox/service.js";
+import RecipientService from "../recipients/service.js";
 import { sendMail } from "../../utils/sendMail.js";
 
 const emailGenerationService = new EmailGenerationService();
+const recipientService = new RecipientService();
 const emailService = new EmailService();
 const campaignService = new CampaignService();
 const jwt = new JsonWebToken();
@@ -115,6 +117,42 @@ class CampaignHandler {
             return res.status(200).json({
                 status: 'success',
                 data: campaign
+            });
+        } catch (error) {
+            console.error('Get campaign error:', error);
+            return res.status(500).json({
+                status: 'error',
+                message: 'Failed to fetch campaign',
+                ...(process.env.NODE_ENV === 'development' && { detail: error.message })
+            });
+        }
+    }
+
+    async getRecipients(req, res) {
+        try {
+            const { id } = req.params;
+            const { headers } = req;
+            const { page, ...filter } = req.body;
+            const decoded = jwt.verify(headers.authorization.split(' ')[1]);
+            const userId = decoded.userId;
+            const filterQuery = { campaignId: id, createdById: userId };
+
+            const campaign = await campaignService.getById(filterQuery);
+            
+            if (!campaign) {
+                return res.status(404).json({
+                    status: 'error',
+                    message: 'Campaign not found'
+                });
+            }
+
+            const recipients = await recipientService.listRecipients(filter, page, 10);
+
+
+
+            return res.status(200).json({
+                status: 'success',
+                data: recipients
             });
         } catch (error) {
             console.error('Get campaign error:', error);
@@ -307,7 +345,7 @@ class CampaignHandler {
                     body: campaign.body
                 })
 
-                const storeSentMail = await emailService.sendEmail(null, campaign.subject, campaign.body, campaign?.email, "betagamer580@gmail.com", emailSendResp, userId);
+                const storeSentMail = await emailService.sendEmail(null, campaign.subject, campaign.body, campaign?.email, "betagamer580@gmail.com", null, emailSendResp, userId);
             }
             
             

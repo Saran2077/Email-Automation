@@ -171,7 +171,7 @@ class MailboxService {
             }
 
             // Process attachments to ensure they're in the correct format
-            const processedAttachments = attachments ? attachments.map(attachment => ({
+            const processedAttachments = (attachments && Array.isArray(attachments)) ? attachments.map(attachment => ({
                 name: attachment.name,
                 type: attachment.type,
                 size: attachment.size,

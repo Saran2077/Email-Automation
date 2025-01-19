@@ -101,8 +101,8 @@ class RecipientHandler {
             const { headers } = req;
             const decoded = jwt.verify(headers.authorization.split(' ')[1]);
             const userId = decoded.userId;
-            const { page = 1, limit = 10, search, stage } = req.query;
-            const filters = { createdById: userId };
+            const { page = 1, limit = 10, search, stage, ...filter } = req.query;
+            const filters = { createdById: userId, ...filter };
     
             // Add search filter for name, email, and company using MongoDB $or operator
             if (search) {
