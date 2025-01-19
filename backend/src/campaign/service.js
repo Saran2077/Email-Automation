@@ -21,7 +21,7 @@ class CampaignService {
     
     async getById(filterQuery) {
         try {
-            const campaign = await CampaignRepository.findOne(filterQuery);
+            const campaign = await CampaignRepository.getById(filterQuery);
             return campaign;
         } catch (error) {
             throw error;
@@ -40,6 +40,24 @@ class CampaignService {
     async delete(filterQuery) {
         try {
             const campaign = await CampaignRepository.delete(filterQuery);
+            return campaign;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async addRecipients(campaignId, recipients) {
+        try {
+            const campaign = await CampaignRepository.addRecipients(campaignId, recipients);
+            return campaign;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async removeRecipient(campaignId, recipients) {
+        try {
+            const campaign = await CampaignRepository.removeRecipients(campaignId, recipients);
             return campaign;
         } catch (error) {
             throw error;

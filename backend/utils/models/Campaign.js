@@ -4,8 +4,7 @@ import { Counter } from './Counter.js';
 const campaignSchema = new mongoose.Schema({
   campaignId: {
     type: Number,
-    unique: true,
-    required: true
+    unique: true
   },
   name: {
     type: String,
@@ -14,9 +13,25 @@ const campaignSchema = new mongoose.Schema({
   description: {
     type: String,
   },
+  status: {
+    type: String,
+    enum: ['Idle', 'Running', 'Ready', 'Sending'],
+    default: 'Idle'
+  },
   recipientsList: {
     type: [mongoose.Schema.Types.ObjectId], 
     ref: 'Recipient', 
+  },
+  generatedEmails: {
+    type: [
+      {
+        name: String,
+        email: String,
+        subject: String,
+        body: String,
+        createdAt: { type: Date, default: Date.now },
+      }
+    ]
   },
   promptTemplate: {
     type: {

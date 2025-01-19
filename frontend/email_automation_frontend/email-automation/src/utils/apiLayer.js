@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const BASE_URL = 'http://localhost:3000/api';
 
-// Create axios instance with default config
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -200,6 +199,15 @@ export const campaignAPI = {
     }
   },
 
+  removeRecipient: async(id, data) => {
+    try {
+      const response = await api.post(`/v1/campaign/remove/${id}`, data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   add: async (id, data) => {
     try {
       const response = await api.post(`/v1/campaign/add/${id}`, data);
@@ -208,6 +216,42 @@ export const campaignAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  get: async (id) => {
+    try {
+      const response = await api.get(`/v1/campaign/get/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  generateEmails: async(id) => {
+    try {
+      const response = await api.post(`/v1/campaign/generate_emails/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  regenerate: async(id, email) => {
+    try {
+      const response = await api.post(`/v1/campaign/regenerate/${id}`, { email });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  sendEmails: async(id) => {
+    try {
+      const response = await api.post(`/v1/campaign/send_emails/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  }
 };
 
 export const dashboardAPI = {
@@ -222,102 +266,244 @@ export const dashboardAPI = {
   }
 };
 
+// export const mailboxAPI = {
+
+//     createDraft: async (draftData) => {
+//         try {
+//             const response = await api.post('/v1/mailbox/create_draft_email', draftData);
+
+//             if (!response.ok) {
+//                 throw new Error('Failed to create draft');
+//             }
+
+//             return await response.json();
+//         } catch (error) {
+//             console.error('Error creating draft:', error);
+//             throw error;
+//         }
+//     },
+  
+//     listDrafts: async () => {
+//         try {
+//             const response = await api.get('/v1/mailbox/list_draft_email');
+            
+//             if (!response.ok) {
+//                 throw new Error('Failed to fetch draft emails');
+//             }
+            
+//             return await response.json();
+//         } catch (error) {
+//             console.error('Error fetching draft emails:', error);
+//             throw error;
+//         }
+//     },
+
+//     listSentEmails: async () => {
+//         try {
+//             const response = await api.get('/v1/mailbox/list_sent_email');
+//             if (!response.ok) {
+//                 throw new Error('Failed to fetch sent emails');
+//             }
+//             return await response.json();
+//         } catch (error) {
+//             console.error('Error fetching sent emails:', error);
+//             throw error;
+//         }
+//     },
+
+//     inboxEmails: async () => {
+//       try {
+//           const response = await api.get('/v1/mailbox/list_inbox_email');
+//           if (!response.ok) {
+//               throw new Error('Failed to fetch sent emails');
+//           }
+//           return await response.json();
+//       } catch (error) {
+//           console.error('Error fetching sent emails:', error);
+//           throw error;
+//       }
+//   },
+
+//     updateDraft: async (draftData) => {
+//         try {
+//             const response = await api.post('/v1/mailbox/update_draft_email', draftData);
+
+//             if (!response.ok) {
+//                 throw new Error('Failed to update draft');
+//             }
+
+//             return await response.json();
+//         } catch (error) {
+//             console.error('Error updating draft:', error);
+//             throw error;
+//         }
+//     },
+
+//     sendEmail: async (emailData) => {
+//         try {
+//             const response = await api.post('/v1/mailbox/send_email', emailData);
+
+//             if (!response.ok) {
+//                 throw new Error('Failed to send email');
+//             }
+
+//             return await response.json();
+//         } catch (error) {
+//             console.error('Error sending email:', error);
+//             throw error;
+//         }
+//     },
+
+//     listStarredEmails: async() => {
+//       try {
+//           const response = await fetch('http://localhost:3000/api/v1/mailbox/list_starred_email');
+//           if (!response.ok) {
+//               throw new Error('Failed to fetch starred emails');
+//           }
+//           return await response.json();
+//       } catch (error) {
+//           console.error('Error fetching starred emails:', error);
+//           throw error;
+//       }
+//     },
+
+//     updateStarEmails: async(emailId) => {
+//       try {
+//           const response = await fetch(`http://localhost:3000/api/v1/mailbox/star_email/${emailId}`, {
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//             },
+//           });
+//           if (!response.ok) {
+//               throw new Error('Failed to update starred emails');
+//           }
+//           return await response.json();
+//       } catch (error) {
+//           console.error('Error update star emails:', error);
+//           throw error;
+//       }
+//     },
+
+//     generateEmailWithAI: async (payload) => {
+//         try {
+//             const response = await api.post('/v1/email_generation/generate_email_with_ai', payload);
+//             return response.data;
+//         } catch (error) {
+//             console.error('Error in generateEmailWithAI:', error);
+//             throw error;
+//         }
+//     },
+
+//     getEmail: async (emailId) => {
+//       try {
+//         const response = await api.get(`/v1/mailbox/${emailId}`);
+//         if (!response?.data?.success) throw new Error('Failed to fetch email');
+
+//         return response?.data?.data;
+//       } catch (error) {
+//         console.error('API Error:', error);
+//         throw error;
+//       }
+//     },
+// };
+
 export const mailboxAPI = {
 
-    createDraft: async (draftData) => {
-        try {
-            const response = await api.post('/v1/mailbox/create_draft_email', draftData);
-            return response.data;
-        } catch (error) {
-            throw error.response?.data || error.message;
-        }
-    },
-
-    listDrafts: async () => {
-        try {
-            const response = await api.get('/v1/mailbox/list_draft_email');
-            return response.data;
-        } catch (error) {
-            throw error.response?.data || error.message;
-        }
-    },
-
-    listSentEmails: async () => {
-        try {
-            const response = await api.get('/v1/mailbox/list_sent_email');
-            return response.data;
-        } catch (error) {
-            throw error.response?.data || error.message;
-        }
-    },
-
-    inboxEmails: async () => {
+  createDraft: async (draftData) => {
       try {
-          const response = await api.get('/v1/mailbox/list_inbox_email');
+          const response = await api.post('/v1/mailbox/create_draft_email', draftData);
           return response.data;
       } catch (error) {
           throw error.response?.data || error.message;
       }
   },
 
-    updateDraft: async (draftData) => {
-        try {
-            const response = await api.post('/v1/mailbox/update_draft_email', draftData);
-            return response.data;
-        } catch (error) {
-            throw error.response?.data || error.message;
-        }
-    },
-
-    sendEmail: async (emailData) => {
-        try {
-            const response = await api.post('/v1/mailbox/send_email', emailData);
-            return response.data;
-        } catch (error) {
-            throw error.response?.data || error.message;
-        }
-    },
-
-    listStarredEmails: async() => {
+  listDrafts: async () => {
       try {
-          const response = await api.get('/v1/mailbox/list_starred_email');
-          return response.data;
-      } catch (error) {
-          console.error('Error fetching starred emails:', error);
-          throw error;
-      }
-    },
-
-    updateStarEmails: async(emailId) => {
-      try {
-          const response = await api.post(`/v1/mailbox/star_email/${emailId}`);
+          const response = await api.get('/v1/mailbox/list_draft_email');
           return response.data;
       } catch (error) {
           throw error.response?.data || error.message;
       }
-    },  
-    
-    generateEmailWithAI: async (payload) => {
-        try {
-            const response = await api.post('/v1/email_generation/generate_email_with_ai', payload);
-            return response.data;
-        } catch (error) {
-            console.error('Error in generateEmailWithAI:', error);
-            throw error;
-        }
-    },
+  },
 
-    getEmail: async (emailId) => {
+  listSentEmails: async () => {
       try {
-        const response = await api.get(`/v1/mailbox/${emailId}`);
-        if (!response?.data?.success) throw new Error('Failed to fetch email');
-
-        return response?.data?.data;
+          const response = await api.get('/v1/mailbox/list_sent_email');
+          return response.data;
       } catch (error) {
-        console.error('API Error:', error);
-        throw error;
+          throw error.response?.data || error.message;
       }
-    },
+  },
+
+  inboxEmails: async () => {
+    try {
+        const response = await api.get('/v1/mailbox/list_inbox_email');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+},
+
+  updateDraft: async (draftData) => {
+      try {
+          const response = await api.post('/v1/mailbox/update_draft_email', draftData);
+          return response.data;
+      } catch (error) {
+          throw error.response?.data || error.message;
+      }
+  },
+
+  sendEmail: async (emailData) => {
+      try {
+          const response = await api.post('/v1/mailbox/send_email', emailData);
+          return response.data;
+      } catch (error) {
+          throw error.response?.data || error.message;
+      }
+  },
+
+  listStarredEmails: async() => {
+    try {
+        const response = await api.get('/v1/mailbox/list_starred_email');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching starred emails:', error);
+        throw error;
+    }
+  },
+
+  updateStarEmails: async(emailId) => {
+    try {
+        const response = await api.post(`/v1/mailbox/star_email/${emailId}`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+  },  
+  
+  generateEmailWithAI: async (payload) => {
+      try {
+          const response = await api.post('/v1/email_generation/generate_email_with_ai', payload);
+          return response.data;
+      } catch (error) {
+          console.error('Error in generateEmailWithAI:', error);
+          throw error;
+      }
+  },
+
+  getEmail: async (emailId) => {
+    try {
+      const response = await api.get(`/v1/mailbox/${emailId}`);
+      if (!response?.data?.success) throw new Error('Failed to fetch email');
+
+      return response?.data?.data;
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
+    }
+  },
 };
 
 export const promptAPI = {

@@ -311,16 +311,18 @@ export const getPromptForStage = ({ stage, contextData, customContext, customPro
         ##NOTE:
            Include all the above sections into the email body seamlessly and naturally, while keeping the email short, concise, and impactful.
 
-        ##General Requirements:
+        ## General Requirements:
         1. The email should be natural, professional, and engaging, with no placeholders or templated words like [signature] or [name]. Format the email body in valid HTML.
-        2. Return only a valid JSON string with this structure:
+        2. Return only a valid **JSON object** (not a stringified or escaped JSON) with this exact structure:
         {
             "subject": "Compelling subject line",
             "body": "HTML formatted email body"
         }
-        3. Keep the email short, concise, and impactful.
-        4. Use the company name and website naturally within the email body.
-        5. Do not include any explanations or additional output—return only the JSON.
+        3. Do not wrap the JSON object in any additional keys (e.g., 'body' or 'data') or include extra text, escape sequences ('\n', '+'), or explanations.
+        4. Ensure the email body does not exceed 300 words.
+        5. The JSON must be valid and directly parsable—no extra formatting or characters outside the JSON structure.
+
+
     `;
 };
 

@@ -181,6 +181,7 @@ const FilterModal = ({ onApply, onClose, initialFilters = {}, visible = false, s
   return (
     <>
       <Modal
+      centered
         title={modalTitle}
         open={visible}
         onCancel={onClose}
@@ -228,6 +229,7 @@ const FilterModal = ({ onApply, onClose, initialFilters = {}, visible = false, s
       </Modal>
 
       <Modal
+        centered
         title={
           <div className="flex items-center gap-2">
             <MessageOutlined />

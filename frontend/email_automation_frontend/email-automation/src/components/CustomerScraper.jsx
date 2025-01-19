@@ -244,7 +244,7 @@ function CustomerScraper() {
               <span className="ml-2">Select All</span>
             </label>
           </div>
-          <div className='overflow-x-auto w-fit'>
+          <div className='overflow-x-auto'>
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>

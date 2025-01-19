@@ -12,9 +12,9 @@ class CampaignRepository {
   }
 
   // Get a campaign by ID
-  async getById(campaignId) {
+  async getById(filterQuery) {
     try {
-      return await Campaign.findOne({ campaignId });
+      return await Campaign.findOne({ ...filterQuery }).populate('recipientsList');
     } catch (error) {
       throw new Error(`Error fetching campaign: ${error.message}`);
     }
@@ -50,7 +50,7 @@ class CampaignRepository {
   async update(campaignId, updateData) {
     try {
       const campaign = await Campaign.findOneAndUpdate(
-        { campaignId },
+        { ...campaignId },
         { $set: updateData },
         { new: true, runValidators: true }
       );
@@ -103,7 +103,7 @@ class CampaignRepository {
         { campaignId },
         { $pullAll: { recipientsList: recipientIds } },
         { new: true }
-      ).populate('recipients');
+      ).populate('recipientsList');
 
       if (!campaign) {
         throw new Error('Campaign not found');

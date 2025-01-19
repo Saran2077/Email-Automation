@@ -7,13 +7,14 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import EmailView from './components/EmailView'
 import ContactView from './components/ContactView'
-import CampaignView from './components/CampaignView'
+import CampaignManagement from './components/CampaignManagement'
 import EmailMarketingPage from './components/List'
 import Login from './components/Login'
 import Register from './components/Register'
 import Profile from './components/Profile'
 import Settings from './components/Settings'
 import { authAPI } from './utils/apiLayer'
+import CampaignView from './components/CampaignView'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -53,6 +54,9 @@ function AppContent() {
             <ProtectedRoute><MailboxView /></ProtectedRoute>
           } />
           <Route path="/campaign" element={
+            <ProtectedRoute><CampaignManagement /></ProtectedRoute>
+          } />
+          <Route path="/campaign/:campaignId" element={
             <ProtectedRoute><CampaignView /></ProtectedRoute>
           } />
           <Route path="/lists" element={

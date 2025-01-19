@@ -7,8 +7,12 @@ const campaignHandler = new CampaignHandler();
 
 router.post('/', campaignHandler.list)
 router.post('/create', campaignHandler.create)
-router.post('/get/:id', campaignHandler.getById)
+router.get('/get/:id', campaignHandler.getById)
 router.post('/add/:id', campaignHandler.addRecipient)
+router.post('/remove/:id', campaignHandler.removeRecipient)
+router.post('/generate_emails/:id', campaignHandler.generateEmails)
+router.post('/send_emails/:id', authenticate , campaignHandler.sendEmails)
+router.post('/regenerate/:id', authenticate , campaignHandler.regenerate)
 router.post('/update/:id', campaignHandler.update)
 router.delete('/:id', campaignHandler.delete)
 

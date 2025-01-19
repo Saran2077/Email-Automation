@@ -1,331 +1,454 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Modal, Table, Form, Input, Select, Space, Popconfirm } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
-import { campaignAPI } from '../utils/apiLayer';
-import { ArrowPathRoundedSquareIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import PromptTemplateEditor from './EmailComposer/PromptTemplateEditor';
+import { 
+  Button, 
+  Card, 
+  Table, 
+  Tag, 
+  Space, 
+  Modal, 
+  Form, 
+  Input, 
+  Select,
+  message,
+  Popconfirm,
+  Drawer
+} from 'antd';
+import { 
+  UserAddOutlined, 
+  DeleteOutlined, 
+  ReloadOutlined,
+  SendOutlined,
+  ArrowLeftOutlined
+} from '@ant-design/icons';
+import { useParams, useNavigate } from 'react-router-dom';
+import { campaignAPI, promptAPI, recipientAPI } from '../utils/apiLayer';
+import { IconButton } from '@mui/material';
+import { EyeIcon } from 'lucide-react';
 
-// Sample campaign data
-const initialCampaigns = [
-  { 
-    id: 1, 
-    name: 'Summer Sale 2025',
-    createdDate: '2025-01-01',
-    description: 'Summer promotion campaign',
-    recipients: ['group1', 'group3']
-  },
-  { 
-    id: 2, 
-    name: 'New Year Promotion',
-    createdDate: '2025-01-10',
-    description: 'New year special deals',
-    recipients: ['group2']
-  }
-];
-
-// Sample recipient groups data
-const recipientGroups = [
-  { value: 'group1', label: 'Premium Customers', count: 1200 },
-  { value: 'group2', label: 'New Customers', count: 850 },
-  { value: 'group3', label: 'Regular Customers', count: 3000 },
-  { value: 'group4', label: 'VIP Members', count: 500 },
-  { value: 'group5', label: 'Dormant Customers', count: 1500 }
-];
-
-// Sample individual recipients data
-const individualRecipients = [
-  { value: 'user1', label: 'John Doe (john@example.com)' },
-  { value: 'user2', label: 'Jane Smith (jane@example.com)' },
-  { value: 'user3', label: 'Bob Wilson (bob@example.com)' },
-  { value: 'user4', label: 'Alice Brown (alice@example.com)' }
-];
-
-const CampaignManagement = () => {
-  const [campaigns, setCampaigns] = useState(initialCampaigns);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [modalType, setModalType] = useState('create');
-  const [selectedCampaign, setSelectedCampaign] = useState(null);
-  const [showPromptTemplate, setShowPromptTemplate] = useState(false)
-  const [templatePayload, setTemplatePayload] = useState(null)
+const CampaignView = () => {
+  const { campaignId } = useParams();
+  const navigate = useNavigate();
+  const [campaign, setCampaign] = useState(null);
+  const [recipients, setRecipients] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [availableRecipients, setAvailableRecipients] = useState([]);
+  const [selectedRecipientIds, setSelectedRecipientIds] = useState([]);
+  const [recipientsLoading, setRecipientsLoading] = useState(false);
+  const [addRecipientModal, setAddRecipientModal] = useState(false);
+  const [emailPreviewDrawer, setEmailPreviewDrawer] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState(null);
+  const [generatedEmails, setGeneratedEmails] = useState([]);
   const [form] = Form.useForm();
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 5,
-    total: initialCampaigns.length,
-  });
 
-  useEffect(() => {
-    fetchCampaign();
-  }, [])
-
+  // Fetch campaign details
   const fetchCampaign = async () => {
     try {
-      const response = await campaignAPI.list();
-      console.log("fetchCampaign", response?.data?.campaigns);
-      setCampaigns(response?.data?.campaigns);
+      setLoading(true);
+      const response = await campaignAPI.get(campaignId);
+      setCampaign(response?.data);
+      setRecipients(response?.data?.recipientsList || []);
+      setGeneratedEmails(response?.data?.generatedEmails || []);
     } catch (error) {
-      console.error("FetchCampaign", error);
+      message.error('Failed to fetch campaign details');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  const handleGenerate = (campaign) => {
-    setShowPromptTemplate(true);
-    setTemplatePayload(campaign?.promptTemplate)
-  }
+  const fetchAvailableRecipients = async () => {
+    try {
+      setRecipientsLoading(true);
+      const response = await recipientAPI.list();
+      setAvailableRecipients(response.recipients);
+    } catch (error) {
+      message.error('Failed to fetch recipients');
+    } finally {
+      setRecipientsLoading(false);
+    }
+  };
 
-  const handleTemplateUpdate = (templateData) => {
-    const parsedTemplate = JSON.parse(templateData);
-    console.log('template update', templateData)
-    setTemplatePayload(parsedTemplate);
-    setShowPromptTemplate(false);
-  }
+  useEffect(() => {
+    fetchAvailableRecipients()
+  }, [])
 
-  // Table columns configuration
-  const columns = [
+  const handleAddSelectedRecipients = async () => {
+    try {
+      await campaignAPI.add(campaignId, { recipientIds: selectedRecipientIds });
+      message.success('Recipients added successfully');
+      fetchCampaign();
+      setAddRecipientModal(false);
+      setSelectedRecipientIds([]);
+    } catch (error) {
+      message.error('Failed to add recipients');
+    }
+  };
+
+  const availableRecipientColumns = [
     {
-      title: 'Campaign Name',
+      title: 'Name',
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: 'Campaign Description',
-      dataIndex: 'description',
-      key: 'description',
+      title: 'Email',
+      dataIndex: 'email',
+      key: 'email',
     },
     {
-      title: 'Created Date',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      title: 'Company',
+      dataIndex: 'company',
+      key: 'company',
+    }
+  ];
+
+  const rowSelection = {
+    selectedRowKeys: selectedRecipientIds,
+    onChange: (selectedRowKeys) => {
+      setSelectedRecipientIds(selectedRowKeys);
+    },
+  };
+
+  useEffect(() => {
+    fetchCampaign();
+  }, [campaignId]);
+
+  // Handle recipient management
+  const handleAddRecipient = async (values) => {
+    try {
+      await campaignAPI.addRecipient(campaignId, values);
+      message.success('Recipient added successfully');
+      fetchCampaign();
+      setAddRecipientModal(false);
+      form.resetFields();
+    } catch (error) {
+      message.error('Failed to add recipient');
+    }
+  };
+
+  const handleRemoveRecipient = async (recipientId) => {
+    try {
+      await campaignAPI.removeRecipient(campaignId, { recipientIds: [recipientId] });
+      message.success('Recipient removed successfully');
+      fetchCampaign();
+    } catch (error) {
+        console.error(error)
+      message.error('Failed to remove recipient');
+    }
+  };
+
+  // Handle email generation
+  const handleGenerateEmails = async () => {
+    try {
+      setLoading(true);
+      const response = await campaignAPI.generateEmails(campaignId);
+      setCampaign(prev => ({ ...prev, status: 'Running' }));
+      message.success('Emails generated successfully');
+    } catch (error) {
+      message.error('Failed to generate emails');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegenerateEmail = async (recipientEmail) => {
+    try {
+      const response = await campaignAPI.regenerate(campaignId, recipientEmail);
+      setGeneratedEmails(prev => prev.map(email => 
+        email.email === recipientEmail ? {...email, ...response.data} : email
+      ));
+      message.success('Email Generation started');
+    } catch (error) {
+      message.error('Failed to regenerate email');
+    }
+  };
+
+  const handleSendAllEmails = async () => {
+    try {
+      await campaignAPI.sendEmails(campaignId);
+      setCampaign(prev => ({ ...prev, status: 'Sending' }));
+      message.success('Started sending emails');
+    } catch (error) {
+      message.error('Failed to send emails');
+    }
+  };
+
+  // Table columns for recipients
+  const recipientColumns = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
     },
     {
-      title: 'Recipients',
-      key: 'recipients',
-      render: (_, record) => (
-        <span>
-          {record.recipientsList?.length} 
-        </span>
-      ),
+      title: 'Email',
+      dataIndex: 'email',
+      key: 'email',
+    },
+    {
+      title: 'Company',
+      dataIndex: 'company',
+      key: 'company',
     },
     {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          />
-          <Popconfirm
-            title="Delete Campaign"
-            description="Are you sure you want to delete this campaign?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button type="text" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-          <Button
-            type="text"
-            icon={<ArrowPathRoundedSquareIcon className='h-4 w-4' />}
-            onClick={() => handleGenerate(record)}
-          />
+
+            {campaign?.status === "Idle" && <Popconfirm
+              title="Remove recipient?"
+              onConfirm={() => handleRemoveRecipient(record._id)}
+            >
+              <Button 
+                type="text" 
+                danger 
+                icon={<DeleteOutlined />}
+              />
+            </Popconfirm>}
+
+            <IconButton
+                onClick={() => navigate(`/contactView/${record.recipientId}`)}
+              ><EyeIcon size={20} /></IconButton>
+
         </Space>
       ),
     },
   ];
 
-  const handleEdit = (campaign) => {
-    setModalType('edit');
-    setSelectedCampaign(campaign);
-    form.setFieldsValue(campaign);
-    setTemplatePayload(campaign?.promptTemplate)
-    setIsModalVisible(true);
-  };
-
-  const handleDelete = (id) => {
-    setCampaigns(campaigns.filter(campaign => campaign.id !== id));
-  };
-
-  const handleCreate = () => {
-    setModalType('create');
-    setSelectedCampaign(null);
-    form.resetFields();
-    setIsModalVisible(true);
-  };
-
-  const handleModalOk = async () => {
-    try {
-      const values = await form.validateFields(); // Ensure validation is awaited
-  
-      if (modalType === 'create') {
-        const newCampaign = {
-          ...values,
-          promptTemplate: templatePayload,
-        };
-  
-        // Await API call for consistency
-        const createdCampaign = await campaignAPI.create({ data: newCampaign});
-  
-        // Use the response from the API if applicable
-        setCampaigns([...campaigns, createdCampaign]);
-      } else if (modalType === 'edit' && selectedCampaign) {
-        console.log('selectedCampaign', selectedCampaign, values)
-        const updatedCampaign = {
-          ...selectedCampaign,
-          ...values,
-        };
-  
-        // Optional: call an update API here if needed
-        await campaignAPI.update(selectedCampaign?.campaignId, { data: updatedCampaign });
-  
-        setCampaigns(
-          campaigns.map((campaign) =>
-            campaign.id === selectedCampaign.id
-              ? updatedCampaign
-              : campaign
-          )
-        );
-      }
-  
-      // Close modal
-      setIsModalVisible(false);
-    } catch (error) {
-      console.error("Error handling modal submission:", error);
-    }
-  };
-  
-
-  const handleTableChange = (pagination) => {
-    setPagination(pagination);
-  };
+  const emailColumns = [
+    {
+      title: 'Recipient',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Subject',
+      dataIndex: 'subject',
+      key: 'subject',
+      ellipsis: true,
+    },
+    {
+      title: 'Generated At',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (date) => new Date(date).toLocaleString(),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button 
+            type="link" 
+            onClick={() => {
+              setSelectedEmail(record);
+              setEmailPreviewDrawer(true);
+            }}
+          >
+            Preview
+          </Button>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => handleRegenerateEmail(record?.email)}
+          >
+            Regenerate
+          </Button>
+        </Space>
+      ),
+    },
+  ];
 
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Campaigns</h1>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleCreate}
-        >
-          Create Campaign
-        </Button>
+      <div className="flex items-center justify-between mb-6">
+        <Space>
+          <Button 
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => navigate('/campaign')}
+          >
+            Back to Campaigns
+          </Button>
+          <h1 className="text-2xl font-bold m-0">
+            {campaign?.name}
+          </h1>
+          <Tag color={
+            campaign?.status === 'Ready' ? 'green' : 
+            campaign?.status === 'Sending' ? 'blue' :
+            'default'
+          }>
+            {campaign?.status}
+          </Tag>
+        </Space>
+
+        {campaign?.status === 'Idle' && (
+          <Button
+            type="primary"
+            onClick={handleGenerateEmails}
+          >
+            Generate Emails
+          </Button>
+        )}
+        
+        {campaign?.status === 'Ready' && (
+          <Button
+            type="primary"
+            icon={<SendOutlined />}
+            onClick={handleSendAllEmails}
+          >
+            Send All Emails
+          </Button>
+        )}
       </div>
 
-      {/* Table */}
-      <Table
-        columns={columns}
-        dataSource={campaigns}
-        rowKey="id"
-        pagination={pagination}
-        onChange={handleTableChange}
-      />
+      {/* Campaign Details */}
+      <Card className="mb-6">
+        <p className="text-gray-600">{campaign?.description}</p>
+        <div className="mt-4">
+          <h3 className="text-lg font-medium mb-2">Template Information</h3>
+          <pre className="bg-gray-50 p-4 rounded">
+            {JSON.stringify(campaign?.promptTemplate, null, 2)}
+          </pre>
+        </div>
+      </Card>
 
-        {showPromptTemplate && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="max-h-[90vh] w-[800px] overflow-y-auto bg-white rounded-lg shadow-xl">
-              <PromptTemplateEditor
-                onClose={() => setShowPromptTemplate(false)}
-                onUpdateBody={handleTemplateUpdate}
-                isBulkCampaign={true}
-                initialTemplateData={templatePayload}
-              />
-            </div>
-          </div>
-        )}
+      {/* Recipients Section */}
+      <Card 
+        title="Recipients" 
+        extra={
+          campaign?.status === 'Idle' && (
+            <Button
+              type="primary"
+              icon={<UserAddOutlined />}
+              onClick={() => setAddRecipientModal(true)}
+            >
+              Add Recipient
+            </Button>
+          )
+        }
+        className="mb-6"
+      >
+        <Table
+          columns={recipientColumns}
+          dataSource={recipients}
+          rowKey="_id"
+          loading={loading}
+        />
+      </Card>
 
-      {/* Create/Edit Modal */}
-      <Modal
-        title={modalType === 'create' ? 'Create Campaign' : 'Edit Campaign'}
-        open={isModalVisible}
-        onOk={handleModalOk}
-        onCancel={() => setIsModalVisible(false)}
-        width={800}
+      {/* Generated Emails Section */}
+      {campaign?.status !== 'Idle' && (
+        <Card 
+          title="Generated Emails"
+        >
+          <Table
+            columns={emailColumns}
+            dataSource={generatedEmails}
+            rowKey="recipientId"
+            loading={loading}
+          />
+        </Card>
+      )}
+
+      {/* Add Recipient Modal */}
+      {/* <Modal
+        title="Add Recipient"
+        open={addRecipientModal}
+        onOk={form.submit}
+        onCancel={() => {
+          setAddRecipientModal(false);
+          form.resetFields();
+        }}
       >
         <Form
           form={form}
           layout="vertical"
-          initialValues={{ 
-            recipients: [],
-            individualRecipients: []
-          }}
+          onFinish={handleAddRecipient}
         >
           <Form.Item
             name="name"
-            label="Campaign Name"
-            rules={[{ required: true, message: 'Please enter campaign name' }]}
+            label="Name"
+            rules={[{ required: true, message: 'Please enter name' }]}
           >
-            <Input placeholder="Enter campaign name" />
+            <Input />
           </Form.Item>
-
           <Form.Item
-            name="description"
-            label="Description"
-            rules={[{ required: true, message: 'Please enter campaign description' }]}
+            name="email"
+            label="Email"
+            rules={[
+              { required: true, message: 'Please enter email' },
+              { type: 'email', message: 'Please enter valid email' }
+            ]}
           >
-            <Input.TextArea 
-              rows={4} 
-              placeholder="Enter campaign description"
-            />
+            <Input />
           </Form.Item>
+        </Form>
+      </Modal> */}
 
-          <div className="bg-gray-50 p-4 rounded-lg mb-4">
-            {/* <h3 className="text-lg font-medium mb-4">Recipients</h3>
+<Modal
+        title="Add Recipients"
+        open={addRecipientModal}
+        onOk={handleAddSelectedRecipients}
+        onCancel={() => {
+          setAddRecipientModal(false);
+          setSelectedRecipientIds([]);
+        }}
+        width={800}
+        okText="Add Selected Recipients"
+        okButtonProps={{ disabled: selectedRecipientIds.length === 0 }}
+      >
+        <div className="mb-4">
+          <Button 
+            type="primary" 
+            onClick={fetchAvailableRecipients}
+            loading={recipientsLoading}
+          >
+            Refresh Recipients List
+          </Button>
+        </div>
+        <Table
+          rowSelection={rowSelection}
+          columns={availableRecipientColumns}
+          dataSource={availableRecipients}
+          rowKey="_id"
+          loading={recipientsLoading}
+          scroll={{ y: 400 }}
+        />
+      </Modal>
 
-            <Form.Item
-              name="individualRecipients"
-              label="Individual Recipients"
-              extra="Optionally add individual recipients"
-            >
-              <Select
-                mode="multiple"
-                placeholder="Search and select individual recipients"
-                style={{ width: '100%' }}
-                options={individualRecipients}
-                showSearch
-                filterOption={(input, option) =>
-                  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }
+      {/* Email Preview Drawer */}
+      <Drawer
+        title="Email Preview"
+        placement="right"
+        width={600}
+        open={emailPreviewDrawer}
+        onClose={() => {
+          setEmailPreviewDrawer(false);
+          setSelectedEmail(null);
+        }}
+      >
+        {selectedEmail && (
+          <div>
+            <div className="mb-4">
+              <h3 className="font-medium">To: {selectedEmail?.name}</h3>
+              <p className="text-gray-600">{selectedEmail?.email}</p>
+            </div>
+            <div className="mb-4">
+              <h3 className="font-medium">Subject</h3>
+              <p>{selectedEmail?.subject}</p>
+            </div>
+            <div>
+              <h3 className="font-medium">Body</h3>
+              <div 
+                className="prose max-w-none"
+                dangerouslySetInnerHTML={{ __html: selectedEmail?.body }}
               />
-            </Form.Item> */}
-
-            <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => setShowPromptTemplate(true)}
-              className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-            >
-                <SparklesIcon className="h-4 w-4" />
-              <span>Generate Campaign Template with AI</span>
-            </button>
-          </div>
-
-            <div className="bg-blue-50 p-3 rounded-lg mt-4">
-              <Form.Item noStyle shouldUpdate>
-                {({ getFieldValue }) => {
-                  const selectedGroups = getFieldValue('recipients') || [];
-                  const selectedIndividuals = getFieldValue('individualRecipients') || [];
-                  const totalRecipients = selectedGroups.reduce((acc, groupId) => {
-                    const group = recipientGroups.find(g => g.value === groupId);
-                    return acc + (group ? group.count : 0);
-                  }, 0) + selectedIndividuals.length;
-
-                  return (
-                    <div className="text-sm text-blue-700">
-                      <UserOutlined className="mr-2" />
-                      Total Recipients: {totalRecipients.toLocaleString()}
-                    </div>
-                  );
-                }}
-              </Form.Item>
             </div>
           </div>
-        </Form>
-      </Modal>
+        )}
+      </Drawer>
     </div>
   );
 };
 
-export default CampaignManagement;
+export default CampaignView;
