@@ -244,6 +244,15 @@ export const campaignAPI = {
     }
   },
 
+  delete: async(id) => {
+    try {
+      const response = await api.delete(`/v1/campaign/delete/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   sendEmails: async(id) => {
     try {
       const response = await api.post(`/v1/campaign/send_emails/${id}`);

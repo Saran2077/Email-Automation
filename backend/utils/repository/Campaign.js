@@ -65,9 +65,9 @@ class CampaignRepository {
   }
 
   // Delete a campaign
-  async delete(campaignId) {
+  async delete(filterQuery) {
     try {
-      const campaign = await Campaign.findOneAndDelete({ campaignId });
+      const campaign = await Campaign.findOneAndDelete(filterQuery);
       if (!campaign) {
         throw new Error('Campaign not found');
       }

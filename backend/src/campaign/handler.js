@@ -414,7 +414,7 @@ class CampaignHandler {
             const { headers } = req;
             const decoded = jwt.verify(headers.authorization.split(' ')[1]);
             const userId = decoded.userId;
-            const filterQuery = { campaignId: id, createdById: userId };
+            const filterQuery = { campaignId: parseInt(id), createdById: userId };
 
             const campaign = await campaignService.delete(filterQuery);
             

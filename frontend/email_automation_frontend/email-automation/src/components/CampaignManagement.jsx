@@ -81,7 +81,7 @@ const CampaignManagement = () => {
 
   const handleDelete = async (campaignId) => {
     try {
-      await campaignAPI.delete(campaignId);
+      await campaignAPI.delete(parseInt(campaignId));
       message.success('Campaign deleted successfully');
       fetchCampaigns();
     } catch (error) {
