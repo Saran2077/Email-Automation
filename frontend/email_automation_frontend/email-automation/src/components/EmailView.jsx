@@ -94,6 +94,28 @@ const EmailView = () => {
     });
   };
 
+  const sanitizeEmailBody = (htmlContent) => {
+    if (!htmlContent) return '';
+    
+    // Replace multiple consecutive line breaks with a single one
+    let cleanedContent = htmlContent.replace(/(\r\n|\n|\r){2,}/gm, '\n');
+    
+    // Ensure paragraphs have proper spacing
+    cleanedContent = cleanedContent.replace(/<\/p><p>/g, '</p>\n<p>');
+    
+    // Add proper list spacing
+    cleanedContent = cleanedContent.replace(/<\/ul><p>/g, '</ul>\n<p>');
+    cleanedContent = cleanedContent.replace(/<\/ol><p>/g, '</ol>\n<p>');
+    
+    // Ensure proper spacing around list items
+    cleanedContent = cleanedContent.replace(/<\/li><li>/g, '</li>\n<li>');
+    
+    // Add proper spacing for signature
+    cleanedContent = cleanedContent.replace(/<br>/g, '<br>\n');
+    
+    return cleanedContent;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -131,7 +153,7 @@ const EmailView = () => {
               >
                 <ArrowLeftIcon className="w-5 h-5" />
               </button>
-              <div className="ml-4 flex space-x-1">
+              {/* <div className="ml-4 flex space-x-1">
                 <button className="px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center">
                   <ReplyIcon className="w-4 h-4 mr-2" />
                   Reply
@@ -140,7 +162,7 @@ const EmailView = () => {
                   <Forward className="w-4 h-4 mr-2" />
                   Forward
                 </button>
-              </div>
+              </div> */}
             </div>
             
             <div className="flex items-center space-x-2">
@@ -210,9 +232,12 @@ const EmailView = () => {
 
           {/* Email Body */}
           <div className="prose max-w-none text-gray-800 mb-8 bg-white p-6 rounded-xl border border-gray-100">
-            <div className="whitespace-pre-wrap">
-              {email.body}
-            </div>
+            <div 
+              className="email-content"
+              dangerouslySetInnerHTML={{ 
+                __html: sanitizeEmailBody(email.body) 
+              }} 
+            />
           </div>
 
           {/* Attachments */}
