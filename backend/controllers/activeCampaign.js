@@ -162,25 +162,29 @@ async function handleContactBulkUpload(req, res) {
     const employeeData = [];
 
     for (let company of data) {
-      const resp = await createAccount({
-        account: {
+      try{
+
+        const resp = await createAccount({
+          account: {
             owner: 1,
             name: company.Name,
             accountUrl: company.Domain,
             fields: [
-                { customFieldId: "1", fieldValue: company.Description },
-                { customFieldId: "14", fieldValue: company.LinkedIn_URL },
-                { customFieldId: "15", fieldValue: company.Business_Models },
-                { customFieldId: "16", fieldValue: company.Primary_Industry }
+              { customFieldId: "1", fieldValue: company.Description },
+              { customFieldId: "14", fieldValue: company.LinkedIn_URL },
+              { customFieldId: "15", fieldValue: company.Business_Models },
+              { customFieldId: "16", fieldValue: company.Primary_Industry }
             ]
-        }
-      });
-      const companyId = resp.account?.id || "";
-
+          }
+        });
+        console.log('Account Response', resp);
+      } catch {
+        console.error('Failed to create account');
+      }
       for (const employee of company.Employee_List || []) {
-        const primaryEmail = `user${Math.floor(Math.random() * 10000)}@gmail.com` || employee.emailInfo?.primaryEmail || '';
+          const primaryEmail = employee?.email || `user${Math.floor(Math.random() * 10000)}@gmail.com` || employee.emailInfo?.primaryEmail || '';
         console.log('Employee Info', {
-            email: employee.emailInfo?.primaryEmail,
+            email: primaryEmail,
             firstName: employee.name?.replace(" ", "") || '',
             lastName: "",
             fieldValues: [
