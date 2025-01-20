@@ -38,7 +38,7 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers, onTemplateU
   useEffect(() => {
     // Fetch recipients from API
     const fetchRecipients = async () => {
-      const response = await fetch('http://localhost:3000/api/activeCampaign/lists')
+      const response = await fetch(`${process.env.BACKEND_URL}/activeCampaign/lists`)
       const data = await response.json()
       setDropdownList(data?.data) 
     }
@@ -97,7 +97,7 @@ function CreateCampaignModal({ onClose, onSubmit, selectedCustomers, onTemplateU
       }, {}))
 
       // Then proceed with Active Campaign upload
-      const response = await fetch('http://localhost:3000/api/activeCampaign/contact/bulk-upload', {
+      const response = await fetch(`${process.env.BACKEND_URL}/activeCampaign/contact/bulk-upload`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
