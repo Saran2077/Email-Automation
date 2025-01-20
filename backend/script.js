@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 
-const baseUrl = 'https://platform.tracxn.com/api/2.2/playground';
+const baseUrl = process.env.TRACXN_URL;
 
 export function convertTracxnToExcel(tracxnData, outputPath) {
     try {

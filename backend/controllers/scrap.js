@@ -4,7 +4,7 @@ import { createAccount, createContact, createContactAssociation } from '../src/s
 import fs from 'fs';
 import XLSX from 'xlsx';
 
-const baseUrl = 'https://platform.tracxn.com/api/2.2/playground';
+const baseUrl = process.env.TRACXN_URL;
 
 const extractRequiredFields = (companyData) => {
     /**
@@ -206,7 +206,7 @@ const fetchFilteredCompanies = async(req, res) => {
         if (!prompt) {
             return res.status(400).json({ error: "Prompt is required" });
         }
-        const baseUrl = 'http://127.0.0.1:5000'
+        const baseUrl = process.env.MCP_URL
         const endpoint = `${baseUrl}/process_query`;
 
         console.log({ query: prompt }, endpoint)
