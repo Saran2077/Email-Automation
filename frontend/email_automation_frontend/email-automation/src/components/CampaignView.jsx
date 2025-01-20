@@ -25,6 +25,7 @@ import { campaignAPI, promptAPI, recipientAPI } from '../utils/apiLayer';
 import { IconButton } from '@mui/material';
 import { EyeIcon } from 'lucide-react';
 import { debounce } from 'lodash';
+import CampaignPromptTemplateEditor from './EmailComposer/CampaignPromptTemplateEditor';
 
 const CampaignView = () => {
   const { campaignId } = useParams();
@@ -39,6 +40,7 @@ const CampaignView = () => {
   const [emailPreviewDrawer, setEmailPreviewDrawer] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [generatedEmails, setGeneratedEmails] = useState([]);
+  const [promptModal, setPromptModal] = useState(false);
   const [form] = Form.useForm();
   const [recipientsPagination, setRecipientsPagination] = useState({
     current: 1,
@@ -345,7 +347,7 @@ const CampaignView = () => {
         {campaign?.status === 'Idle' && (
           <Button
             type="primary"
-            onClick={handleGenerateEmails}
+            onClick={() => setPromptModal(true)}
           >
             Generate Emails
           </Button>
@@ -435,7 +437,7 @@ const CampaignView = () => {
           <Input.Search
             placeholder="Search recipients..."
             allowClear
-            onSearch={handleSearch}
+            onChange={(e) => handleSearch(e.target.value)}
             style={{ marginBottom: 16 }}
           />
 
@@ -458,6 +460,17 @@ const CampaignView = () => {
           />
         </Space>
       </Modal>
+
+      {promptModal &&
+      (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="max-h-[90vh] w-[800px] overflow-y-auto bg-white rounded-lg shadow-xl">
+      <CampaignPromptTemplateEditor
+        campaignId={campaignId}
+        onClose={() => setPromptModal(false)}
+        initialTemplateData={campaign?.promptTemplate}
+      />
+      </div>
+      </div>)}
 
       {/* Email Preview Drawer */}
       <Drawer
