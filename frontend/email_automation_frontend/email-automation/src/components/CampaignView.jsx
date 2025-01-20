@@ -369,7 +369,7 @@ const CampaignView = () => {
         <p className="text-gray-600">{campaign?.description}</p>
         <div className="mt-4">
           <h3 className="text-lg font-medium mb-2">Template Information</h3>
-          <pre className="bg-gray-50 p-4 rounded">
+          <pre className="bg-gray-50 p-4 rounded max-h-[300px] overflow-auto whitespace-pre-wrap">
             {JSON.stringify(campaign?.promptTemplate, null, 2)}
           </pre>
         </div>
